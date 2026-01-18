@@ -1,0 +1,15 @@
+:root {
+  --login-bg: #eef0f3;
+
+  --login-card-bg: #f8f9fb;
+  --login-border: #d3d6db;
+
+  --login-input-bg: #ffffff;
+  --login-input-border: #c5c8ce;
+
+  --login-text: #ffffff;   /* white text because image bg */
+  --login-muted: #e3e3e3;
+
+  --login-accent: #d72638;
+  --login-accent-hover: #bf1f30;
+}
