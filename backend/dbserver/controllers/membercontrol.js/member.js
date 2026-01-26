@@ -96,5 +96,55 @@ memberRouter.get("/getdetails", async (req, res) => {
         return res.status(500).json({ message: err });
     }
 })
+memberRouter.patch('/updatemember', async (req, res) => {
+    const {
+        memberid,
+        firstname,
+        lastname,
+        gender,
+        dob,
+        marital_status,
+        mobile,
+        alternate_mobile,
+        email,
+        address_line1,
+        address_line2,
+        area,
+        city,
+        pincode,
+        isactive
+    } = req.body;
+
+
+
+    if (!memberid || !firstname || !lastname || !mobile || !email || !address_line1 || !city || !pincode || isactive === undefined) {
+        return res.status(400).json({
+            status: "error",
+            message: "Required fields are missing",
+            title: "Bad Request"
+        });
+    }
+    const updatedData = { firstname, lastname, gender, dob, marital_status, mobile, alternate_mobile, email, address_line1, address_line2, area, city, pincode, isactive };
+    const result = await Membermaster.updateOne(
+        { customerId: memberid },
+        {
+            $set: updatedData
+        }, { runValidators: true, new: true }
+    )
+    if (!result) {
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to update member details",
+            title: "Server Error"
+        });
+    }
+    return res.status(200).json({
+        status: "success",
+        message: "Member details updated successfully",
+        title: "Success"
+    });
+
+
+})
 
 export default memberRouter

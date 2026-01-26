@@ -3,6 +3,12 @@ import mongoose from "mongoose";
 
 const planSchema = new mongoose.Schema(
     {
+        branchId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'branchmaster',
+            required: true,
+            index: true,
+        },
         plan_name: {
             type: String,
             required: true,

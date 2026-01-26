@@ -6,6 +6,7 @@ import ProtectedLayout from "./layouts/ProtectedLayout";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login.jsx";
 import Member from "./pages/Member.jsx";
+import Sales from "./pages/Sales.jsx";
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/member" element={<Member />} />
+          <Route path="/sales" element={<Sales />} />
         </Route>
       </Routes>
     </BrowserRouter>

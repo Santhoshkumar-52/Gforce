@@ -30,6 +30,7 @@ const Member = () => {
     area: "",
     city: "",
     pincode: "",
+    isactive: true,
     // membership_status: "Active",
     clientid,
   };
@@ -119,6 +120,7 @@ const Member = () => {
         area: member.area || "",
         city: member.city || "",
         pincode: member.pincode || "",
+        isactive: member.isactive,
         clientid,
       });
 
@@ -129,51 +131,43 @@ const Member = () => {
         text: err.message,
       });
     }
-    // try {
-    //   const response = await axios.get(
-    //     `${baseUrl}/api/getcustomerdetails/${id}`
-    //   );
-    //   console.log("Editing:", response.data.details.firstname);
-    //   setForm({ ...response.data.details, clientid });
-    //   changemode(true);
-    //   setSelectedTab(1);
-    // } catch (error) {
-    //   console.error("Error fetching member:", error);
-    // }
   };
   const handleUpdate = async () => {
     if (!validate()) return;
-    console.log(form);
-
-    // try {
-    //   const response = await axios.put(`${baseUrl}/api/updateMember`, form);
-    //   if (response.data) {
-    //     const { icon, title, text } = response.data;
-    //     Swal.fire({
-    //       toast: true,
-    //       timer: 2000,
-    //       icon: icon,
-    //       text: text,
-    //       title: title,
-    //     });
-    //   }
-    // } catch (err) {
-    //   Swal.fire({
-    //     icon: "error",
-    //     title: "Error",
-    //     text: errorText,
-    //     timer: 2000,
-    //     showConfirmButton: false,
-    //     position: "top-end",
-    //     toast: true,
-    //   });
-    // }
+    try {
+      const response = await axios.patch(
+        `${baseUrl}/api/member/updatemember`,
+        form,
+      );
+      if (response.data) {
+        const { status, title, text } = response.data;
+        Swal.fire({
+          position: "top-end",
+          toast: true,
+          timer: 2000,
+          icon: status,
+          text: text,
+          title: title,
+        });
+        setIsEditOpen(false);
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorText,
+        timer: 2000,
+        showConfirmButton: false,
+        position: "top-end",
+        toast: true,
+      });
+    }
   };
 
   const handleBack = () => window.history.back();
   const closeEditModal = () => {
     setIsEditOpen(false);
-    setForm(defaultform); 
+    setForm(defaultform);
   };
 
   return (
@@ -203,7 +197,7 @@ const Member = () => {
         <Tab.Panels>
           {/* TABLE */}
           <Tab.Panel>
-            <MemberTable onEdit={handleEdit} />
+            <MemberTable key={isEditOpen == false} onEdit={handleEdit} />
           </Tab.Panel>
 
           {/* ADD MEMBER */}
@@ -413,7 +407,11 @@ const Member = () => {
         </Tab.Panels>
       </Tab.Group>
       <Transition appear show={isEditOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={closeEditModal}>
+        <Dialog
+          as="div"
+          className="relative z-50 border-2"
+          onClose={closeEditModal}
+        >
           {/* Backdrop */}
           <Transition.Child
             as={Fragment}
@@ -439,7 +437,7 @@ const Member = () => {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel
-                  className="w-full max-w-5xl rounded-xl p-6 shadow-xl"
+                  className="min-w-1xl rounded-xl p-6 shadow-xl"
                   style={{ background: "var(--crm-card)" }}
                 >
                   <Dialog.Title className="text-lg font-semibold mb-4">
@@ -614,6 +612,23 @@ const Member = () => {
                         onChange={handleChange}
                         className="border rounded-lg p-2 bg-transparent"
                       />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-sm">Status</label>
+                      <select
+                        name="isactive"
+                        value={form.isactive ? "true" : "false"}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            isactive: e.target.value === "true",
+                          })
+                        }
+                        className="border rounded-lg p-2 bg-transparent"
+                      >
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                      </select>
                     </div>
                   </div>
 
