@@ -4,4 +4,12 @@
   --box: #f4f4f4;
   --footertext: #FEFEFA;
   --footerbg:#0000B8;
+
+  --cash-color: #e25555;
+  --card-color: #5bc0de;
+  --upi-color: #5cb85c;
+
+  --save-color: #28a745;
+  --cancel-color: #dc3545;
+  --clear-color: #6c757d;
 }

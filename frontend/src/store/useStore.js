@@ -18,12 +18,6 @@ let getsavedstaffid = localStorage.getItem('staffid')
 let getsavedplanid = localStorage.getItem('planid')
 
 
-// getsavedclientid = ;
-// getsaveddiscountid = ;
-// getsavedgstid =;
-// getsavedstaffid = ;
-// getsavedplanid = ;
-
 const useStore = create((set, get) => ({
     user: JSON.parse(localStorage.getItem("user")) || false,
     branchid: localStorage.getItem("branchid") || '',

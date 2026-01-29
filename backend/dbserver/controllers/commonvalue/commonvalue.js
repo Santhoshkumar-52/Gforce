@@ -11,8 +11,8 @@ import mongoose from "mongoose";
 dotenv.config()
 
 commonRouter.post('/planid', async (req, res) => {
-    const { branchid, groupid } = req.body;
-    if (!branchid || !groupid) {
+    const { branchid } = req.body;
+    if (!branchid) {
         return res.status(400).json({ status: "error", message: "branchid and groupid are never received in DB request" })
     }
     try {

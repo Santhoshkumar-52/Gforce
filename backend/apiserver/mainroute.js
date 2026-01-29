@@ -6,6 +6,7 @@ IMPORT ROUTES
 import loginrouter from "./controllers/login/login.js";
 import memberRouters from "./controllers/member/member.js";
 import commonRouter from "./controllers/commonvalues.js";
+import salerouter from "./controllers/sales/managesales.js";
 
 
 /* =========================
@@ -14,6 +15,7 @@ import commonRouter from "./controllers/commonvalues.js";
 router.use('/login', loginrouter)
 router.use('/member', memberRouters)
 router.use('/commonvalue', commonRouter)
+router.use('/sales', salerouter)
 
 /* =========================
    FALLBACK (OPTIONAL)

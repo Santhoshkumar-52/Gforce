@@ -11,6 +11,9 @@ import {
   calculateGST,
   calculateDiscount,
 } from "../store/calculationFunctions.js";
+import axios from "axios";
+import SaleSummaryModal from "../pageUIBlocks/SaleSummary.jsx";
+import { duration } from "@mui/material";
 
 const Sales = () => {
   // Generate a random sale ID for the bill
@@ -22,8 +25,10 @@ const Sales = () => {
   // Default form values
   const defaultvalues = useMemo(
     () => ({
+      memberid: "",
       saledate: new Date().toISOString().split("T")[0],
-      billno: saleid,
+      billno: "SI/" + saleid,
+      duration: 0,
       mobile: "",
       plan: "",
       planname: "",
@@ -52,8 +57,15 @@ const Sales = () => {
     plans,
     setstaff,
     staffs,
+    baseUrl,
+    branchid,
   } = useStore();
 
+  const [form, setForm] = useState(defaultvalues);
+  const [members, setMembers] = useState([]);
+
+  // Table data
+  const [table, setTable] = useState([]);
   // Initialize store data on mount
   useEffect(() => {
     setdicountids();
@@ -62,11 +74,25 @@ const Sales = () => {
     setstaff();
   }, []);
 
-  // Form state
-  const [form, setForm] = useState(defaultvalues);
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await axios.post(`${baseUrl}/api/member/getmembers`, {
+          clientid: branchid,
+        });
 
-  // Table data
-  const [table, setTable] = useState([]);
+        // assuming API returns array
+        setMembers(res.data.records || []);
+        // console.log(res.data.records);
+      } catch (err) {
+        console.error("Failed to load members", err);
+      }
+    };
+
+    fetchMembers();
+  }, []);
+
+  // Form state
 
   // Compute if discount input should be shown (optimized with useMemo)
   const discountoption = useMemo(
@@ -87,6 +113,8 @@ const Sales = () => {
         // PLAN selection
         if (name === "plan") {
           const selectedOption = e.target.options[e.target.selectedIndex];
+          const duration = Number(selectedOption.dataset.duration_months);
+          updated.duration = duration;
           const price =
             value === "0" ? 0 : Number(selectedOption.dataset.price);
           updated.baseamount = price;
@@ -172,21 +200,43 @@ const Sales = () => {
 
     // Create new record
     const newRecord = {
+      duration: form.duration,
+      memberid: form.memberid,
       id: Date.now(),
+      billno: form.billno,
       plan: form.plan,
       planname: form.planname,
       staff: form.staff,
       staffname: form.staffname,
       baseprice: form.baseamount,
+      discounttype: form.discount,
       discount: form.discountfinalamt || 0,
       gst: form.gst || 0,
       gstamount: form.gstpercent || 0,
       total: Math.round(form.totalamount),
+      saledate: form.saledate,
     };
 
     setTable((prev) => [...prev, newRecord]);
     setForm(defaultvalues);
   }, [form]);
+
+  const saveRecord = async () => {
+    try {
+      const res = await axios.post(`${baseUrl}/api/sales/addsale`, table);
+      Swal.fire({
+        icon: res.status,
+        title: res.title,
+        text: res.message,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops",
+        text: err.message,
+      });
+    }
+  };
 
   // -------------------------
   // deleteRecord: removes record from table
@@ -280,6 +330,25 @@ const Sales = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-1 mt-4">
         {/* PLAN */}
         <div className="flex flex-col text-sm md:mx-1">
+          <label className="mb-1">Member *</label>
+
+          <select
+            name="memberid"
+            value={form.memberid}
+            onChange={handleSale}
+            className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
+          >
+            <option value="">Select Member</option>
+
+            {Array.isArray(members) &&
+              members.map((member) => (
+                <option key={member._id} value={member._id}>
+                  {member.customerId} - {member.mobile} - {member.firstname}
+                </option>
+              ))}
+          </select>
+        </div>
+        <div className="flex flex-col text-sm md:mx-1">
           <label className="mb-1">Plan *</label>
           <select
             name="plan"
@@ -289,7 +358,12 @@ const Sales = () => {
           >
             <option value="0">Select</option>
             {plans.map((plan, index) => (
-              <option key={index} value={plan._id} data-price={plan.price}>
+              <option
+                key={index}
+                value={plan._id}
+                data-price={plan.price}
+                data-duration_months={plan.duration_months}
+              >
                 {plan.plan_name}
               </option>
             ))}
@@ -408,13 +482,15 @@ const Sales = () => {
 
       {/* FOOTER BAR */}
       <div className="fixed left-0 bottom-0 w-full bg-[var(--footerbg)] shadow-lg p-4 flex justify-evenly items-center z-1">
-        <span className="text-lg font-medium text-[var(--footertext)]">
-          Total Plans: {table.length}
-        </span>
-        <span className="text-lg font-medium text-[var(--footertext)]">
-          Total: {priceformat}
-          {table.reduce((acc, data) => acc + data.total, 0)}
-        </span>
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:w-100 text-lg lg:text-2xl">
+          <span className="font-medium text-[var(--footertext)]">
+            Total Plans: {table.length}
+          </span>
+          <span className="font-medium text-[var(--footertext)]">
+            Total: {priceformat}
+            {table.reduce((acc, data) => acc + data.total, 0)}
+          </span>
+        </div>
         <button
           onClick={() => changeOpen(true)}
           disabled={table.length === 0}
@@ -429,52 +505,7 @@ const Sales = () => {
       </div>
 
       {/* PAYMENT MODAL */}
-      <Modal
-        open={open}
-        onClose={() => changeOpen(false)}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <button
-            onClick={() => changeOpen(false)}
-            style={{
-              float: "right",
-              background: "red",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              padding: "2px 6px",
-              cursor: "pointer",
-            }}
-          >
-            X
-          </button>
-
-          <h2 id="modal-title">Modal Title</h2>
-          <p id="modal-description">This is the modal content area.</p>
-          <button
-            onClick={() => {
-              // perform action
-              changeOpen(false);
-            }}
-          >
-            Save
-          </button>
-        </Box>
-      </Modal>
+      <SaleSummaryModal open={open} changeOpen={changeOpen} table={table} />
     </div>
   );
 };
