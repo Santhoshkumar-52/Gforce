@@ -41,26 +41,20 @@ const saleSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
-        discounttype: {
-            type: Number,
-            default: 0
-        },
         discountAmount: {
             type: Number,
             default: 0,
         },
-
-        gstPercent: {
-            type: Number,
-            default: 0,
-        },
-
         gstAmount: {
             type: Number,
             default: 0,
         },
 
         totalAmount: {
+            type: Number,
+            required: true,
+        },
+        paidAmount: {
             type: Number,
             required: true,
         },

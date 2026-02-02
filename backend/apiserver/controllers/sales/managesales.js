@@ -10,6 +10,8 @@ const DBSERVERURL = process.env.DBSERVERURL
 salerouter.post('/addsale', async (req, res) => {
     try {
         const { sales, summary, payment, branchid, staffid } = req.body;
+        console.log(sales, summary, payment);
+
 
         /* ---------------- VALIDATION ---------------- */
 
@@ -43,11 +45,12 @@ salerouter.post('/addsale', async (req, res) => {
             memberId: sales[0].memberid,
             staffId: staffid,
 
-            baseAmount: summary.totalAmount,
+            baseAmount: summary.totalBasePrice,
             discountAmount: summary.totalDiscount || 0,
             gstPercent: summary.totalGST || 0,
             gstAmount: summary.totalGST || 0,
             totalAmount: summary.totalAmount,
+            paidAmount: payment.cash + payment.card + payment.upi,
 
             paymentMode: {
                 cash: payment.cash || 0,
@@ -110,8 +113,8 @@ salerouter.post('/addsale', async (req, res) => {
         /* ---------------- TEMP RESPONSE ---------------- */
 
         res.json({
-            status: response.status,
-            message: "idk",
+            status: response.data.status,
+            message: "Sale Generated Successfully",
         });
 
     } catch (err) {

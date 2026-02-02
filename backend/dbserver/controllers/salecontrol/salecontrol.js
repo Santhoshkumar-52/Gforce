@@ -7,7 +7,7 @@ import memberplan from "../../model/memberplan.js";
 const salerouter = express.Router();
 
 salerouter.post("/addsale", async (req, res) => {
-    const { saleMasterData, memberPlanData } = req.body;
+
 
     const session = await mongoose.startSession();
 
@@ -15,6 +15,9 @@ salerouter.post("/addsale", async (req, res) => {
         session.startTransaction();
 
         const { saleMasterData, memberPlanData } = req.body;
+        console.log("sales", saleMasterData);
+        console.log("member", memberPlanData);
+
 
         if (!saleMasterData || !Array.isArray(memberPlanData)) {
             throw new Error("Invalid payload");

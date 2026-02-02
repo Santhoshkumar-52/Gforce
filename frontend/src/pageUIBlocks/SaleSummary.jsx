@@ -2,6 +2,7 @@ import { Modal, Box } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
 import CommonValueContext from "../layouts/CommonvalueContext.jsx";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 export default function SaleSummaryModal({ open, changeOpen, table }) {
   const { priceformat, baseUrl, user, branchid } =
@@ -21,9 +22,11 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
         acc.totalDiscount += Number(row.discount || 0);
         acc.totalGST += Number(row.gstamount || 0);
         acc.totalAmount += Number(row.total || 0);
+        acc.totalBasePrice += Number(row.baseprice);
         return acc;
       },
       {
+        totalBasePrice: 0,
         totalItems: 0,
         totalDiscount: 0,
         totalGST: 0,
@@ -44,12 +47,31 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
   };
 
   const handlePay = async () => {
+    if (paidAmount < summary.totalAmount) {
+      const result = await Swal.fire({
+        title: "Partial Payment?",
+        text: "Paid amount is less than the bill total. Do you want to proceed with partial payment?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, proceed",
+        cancelButtonText: "No, cancel",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+      });
+
+      if (!result.isConfirmed) {
+        // ❌ User clicked NO
+        return; // stop execution, cancel save
+      }
+
+      // ✅ User clicked YES → continue saving
+    }
     const payload = {
       sales: table,
       summary,
       payment,
       staffid,
-      branchid, 
+      branchid,
     };
 
     try {
@@ -63,12 +85,7 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
           "_blank",
         );
 
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-          };
-        }
+   
       } else {
         // backend responded but status is not success
         Swal.fire({
