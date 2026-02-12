@@ -25,6 +25,11 @@ const saleSchema = new mongoose.Schema(
             type: Date,
             required: true,
         },
+        saleType: {
+            type: String,
+            required: true,
+            default: "SI"
+        },
 
         memberId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -50,7 +55,7 @@ const saleSchema = new mongoose.Schema(
             default: 0,
         },
 
-        totalAmount: {
+        nettAmount: {
             type: Number,
             required: true,
         },
@@ -58,6 +63,19 @@ const saleSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
+        balance: {
+            type: Number,
+            default: 0,
+        },
+        change: {
+            type: Number,
+            default: 0,
+        },
+        creadtedBy: {
+            type: "String",
+            required: true,
+        },
+
 
         paymentMode: {
             cash: { type: Number, default: 0 },
@@ -67,7 +85,7 @@ const saleSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ["PAID", "CANCELLED", "REFUNDED"],
+            enum: ["PAID", "CANCELLED", "REFUNDED", "RENEWED"],
             default: "PAID",
         },
     },

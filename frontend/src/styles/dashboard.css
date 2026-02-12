@@ -5,9 +5,16 @@
   --text-muted: #6b7280;
   --border-default: #e5e7eb;
   --card-bg1: #1e40af; /* Deep Blue – trust, totals, revenue */
---card-bg2: #b45309; /* Warm Amber – orders, activity */
---card-bg3: #065f46; /* Teal Green – success, growth */
---card-bg4: #374151; /* Slate Gray – neutral metrics */
---card-bg5: #6d28d9; /* Royal Purple – premium / insights */
+  --card-bg2: #b45309; /* Warm Amber – orders, activity */
+  --card-bg3: #065f46; /* Teal Green – success, growth */
+  --card-bg4: #374151; /* Slate Gray – neutral metrics */
+  --card-bg5: #6d28d9; /* Royal Purple – premium / insights */
   --card-text: #eeeeee;
+
+  /* Chart js  */
+
+  --chart-primary: #4f46e5;
+  --chart-secondary: #22c55e;
+  --chart-accent: #f59e0b;
+  --chart-danger: #ef4444;
 }

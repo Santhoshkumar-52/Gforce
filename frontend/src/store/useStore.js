@@ -16,11 +16,12 @@ let getsaveddiscountid = localStorage.getItem('discountids')
 let getsavedgstid = localStorage.getItem('gstids')
 let getsavedstaffid = localStorage.getItem('staffid')
 let getsavedplanid = localStorage.getItem('planid')
+let getloggeduserbranch = localStorage.getItem('branchid')
 
 
 const useStore = create((set, get) => ({
     user: JSON.parse(localStorage.getItem("user")) || false,
-    branchid: localStorage.getItem("branchid") || '',
+    branchid: getloggeduserbranch || '',
     baseUrl: baseUrl,
     branchids: getsavedclientid && decodeIfExists(getsavedclientid) || [],
     discountids: getsaveddiscountid && decodeIfExists(getsaveddiscountid) || [],
@@ -52,7 +53,7 @@ const useStore = create((set, get) => ({
             const { user } = get();
             const response = await axios.post(`${baseUrl}/api/commonvalue/clientid`, { branchid: user.staff.branchId, groupid: user.group._id });
             let clientids = response.data.branchid;
-            localStorage.setItem('clientid', clientids)
+            localStorage.setItem('branchids', clientids)
             clientids = decodeIfExists(clientids)
             set({
                 branchids: clientids
@@ -125,64 +126,6 @@ const useStore = create((set, get) => ({
             console.error("Error fetching client IDs:", err);
             set({ plans: [] });
         }
-    },
-    handledate: (duration) => {
-        const formatDate = (date) => date.toISOString().split("T")[0];
-
-        const today = new Date();
-        let startdate = "";
-        let enddate = "";
-
-        switch (duration) {
-            case "today":
-                startdate = formatDate(today);
-                enddate = formatDate(today);
-                break;
-
-            case "ytdy": {
-                const ytdy = new Date(today);
-                ytdy.setDate(ytdy.getDate() - 1);
-                startdate = formatDate(ytdy);
-                enddate = formatDate(ytdy);
-                break;
-            }
-
-            case "last7": {
-                const start = new Date(today);
-                start.setDate(start.getDate() - 6);
-                startdate = formatDate(start);
-                enddate = formatDate(today);
-                break;
-            }
-
-            case "last14": {
-                const start = new Date(today);
-                start.setDate(start.getDate() - 13);
-                startdate = formatDate(start);
-                enddate = formatDate(today);
-                break;
-            }
-
-            case "month": {
-                const start = new Date(
-                    today.getFullYear(),
-                    today.getMonth(),
-                    1
-                );
-                startdate = formatDate(start);
-                enddate = formatDate(today);
-                break;
-            }
-
-            // 🔹 If duration itself is a date (custom / picker)
-            default: {
-                startdate = formatDate(new Date(duration));
-                enddate = formatDate(today);
-                break;
-            }
-        }
-
-        return { startdate, enddate };
     }
 }))
 

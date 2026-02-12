@@ -84,8 +84,6 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
           res.data.printUrl || "about:blank",
           "_blank",
         );
-
-   
       } else {
         // backend responded but status is not success
         Swal.fire({

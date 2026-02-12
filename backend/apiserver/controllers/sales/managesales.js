@@ -10,7 +10,6 @@ const DBSERVERURL = process.env.DBSERVERURL
 salerouter.post('/addsale', async (req, res) => {
     try {
         const { sales, summary, payment, branchid, staffid } = req.body;
-        console.log(sales, summary, payment);
 
 
         /* ---------------- VALIDATION ---------------- */
@@ -35,6 +34,19 @@ salerouter.post('/addsale', async (req, res) => {
             Date.now().toString().slice(-9) +
             Math.floor(Math.random() * 100).toString().padStart(2, "0");
 
+        const totalmode = payment.cash + payment.card + payment.upi
+
+        const balance =
+            summary.totalAmount > totalmode
+                ? summary.totalAmount - totalmode
+                : 0;
+
+        const change =
+            summary.totalAmount < totalmode
+                ? totalmode - summary.totalAmount
+                : 0;
+
+
         const saleMasterData = {
             branchId: branchid,
 
@@ -43,15 +55,16 @@ salerouter.post('/addsale', async (req, res) => {
 
             saleDate: sales[0].saledate,
             memberId: sales[0].memberid,
-            staffId: staffid,
+            creadtedBy: staffid,
 
             baseAmount: summary.totalBasePrice,
             discountAmount: summary.totalDiscount || 0,
             gstPercent: summary.totalGST || 0,
             gstAmount: summary.totalGST || 0,
-            totalAmount: summary.totalAmount,
-            paidAmount: payment.cash + payment.card + payment.upi,
-
+            nettAmount: summary.totalAmount,
+            paidAmount: totalmode,
+            balance,
+            change,
             paymentMode: {
                 cash: payment.cash || 0,
                 card: payment.card || 0,
@@ -83,12 +96,14 @@ salerouter.post('/addsale', async (req, res) => {
             expiryDate.setMonth(expiryDate.getMonth() + Number(item.duration));
 
             memberPlanData.push({
+                branchId: branchid,
                 memberId: item.memberid,
                 planId: item.plan,
                 saleUniqueId: saleUniqueId, // SAME ID
                 startDate: startDate.toISOString().split("T")[0],
                 expiryDate: expiryDate.toISOString().split("T")[0],
                 durationInMonths: Number(item.duration),
+                allotedstaff: item.staff,
                 isActive: true,
                 isExpired: false,
             });

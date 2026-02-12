@@ -14,11 +14,19 @@ const memberPlanSchema = new mongoose.Schema(
             ref: "planmaster",
             required: true,
         },
+        branchId: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+        },
 
         saleUniqueId: {
-            type: String, 
+            type: String,
             required: true,
             index: true,
+        },
+        allotedstaff: {
+            type: String,
+            required: true,
         },
 
         startDate: {

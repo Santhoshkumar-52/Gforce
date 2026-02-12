@@ -21,6 +21,7 @@ const Sales = () => {
 
   // Modal open/close state
   const [open, changeOpen] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   // Default form values
   const defaultvalues = useMemo(
@@ -42,6 +43,7 @@ const Sales = () => {
       gstpercent: "",
       totalamount: 0,
       baseamount: 0,
+      creadtedby: user?.staff?.staffid || 1,
     }),
     [saleid],
   );
@@ -68,6 +70,7 @@ const Sales = () => {
   const [table, setTable] = useState([]);
   // Initialize store data on mount
   useEffect(() => {
+    form;
     setdicountids();
     setgstids();
     setplanids();
