@@ -63,8 +63,6 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
         // ❌ User clicked NO
         return; // stop execution, cancel save
       }
-
-      // ✅ User clicked YES → continue saving
     }
     const payload = {
       sales: table,
@@ -80,10 +78,7 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
       // assuming backend sends: { status: "success", message: "...", printUrl?: "..." }
       if (res.data?.status === "success") {
         // open blank window (or image URL) and trigger print
-        const printWindow = window.open(
-          res.data.printUrl || "about:blank",
-          "_blank",
-        );
+        window.open(`/sales/invoice/${res.data.saleUniqueId}`, "_blank");
       } else {
         // backend responded but status is not success
         Swal.fire({

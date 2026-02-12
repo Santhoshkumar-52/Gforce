@@ -1,0 +1,44 @@
+/* Header Gradient */
+.invoice-header {
+  background: linear-gradient(90deg, #2563eb, #1e3a8a);
+}
+
+/* Section Box */
+.section-box {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.section-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
+}
+
+/* Amount Box */
+.amount-box {
+  background-color: #f3f4f6;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* Status Badges */
+.status-badge {
+  color: white;
+}
+
+.status-paid {
+  background-color: #16a34a;
+}
+
+.status-pending {
+  background-color: #facc15;
+  color: #000;
+}
+
+.status-unpaid {
+  background-color: #dc2626;
+}

@@ -41,6 +41,8 @@ const Sales = () => {
       gst: "0",
       gstid: "0",
       gstpercent: "",
+      startDate: new Date().toISOString().split("T")[0],
+      expiryDate: new Date().toISOString().split("T")[0],
       totalamount: 0,
       baseamount: 0,
       creadtedby: user?.staff?.staffid || 1,
@@ -117,13 +119,24 @@ const Sales = () => {
         if (name === "plan") {
           const selectedOption = e.target.options[e.target.selectedIndex];
           const duration = Number(selectedOption.dataset.duration_months);
-          updated.duration = duration;
           const price =
             value === "0" ? 0 : Number(selectedOption.dataset.price);
+
+          updated.duration = duration;
           updated.baseamount = price;
           updated.planname = value === "0" ? "Unknown" : selectedOption.text;
-        }
 
+          if (form.startDate) {
+            updated.expiryDate = calculateExpiry(form.startDate, duration);
+          }
+        }
+        if (name === "startDate") {
+          updated.startDate = value;
+
+          if (form.duration) {
+            updated.expiryDate = calculateExpiry(value, form.duration);
+          }
+        }
         // STAFF selection
         if (name === "staff") {
           const selectedOption = e.target.options[e.target.selectedIndex];
@@ -182,6 +195,14 @@ const Sales = () => {
         confirmButtonColor: "var(--important)",
       });
     }
+    if (!form.startDate || !form.expiryDate) {
+      return Swal.fire({
+        title: "Wait",
+        text: "Start And Expiry Date Needed",
+        icon: "warning",
+        confirmButtonColor: "var(--important)",
+      });
+    }
     if (!form.plan || !form.staff || form.totalamount < 0) {
       Swal.fire({
         title: "Missing Required Fields",
@@ -204,6 +225,8 @@ const Sales = () => {
     // Create new record
     const newRecord = {
       duration: form.duration,
+      startDate: form.startDate,
+      expiryDate: form.expiryDate,
       memberid: form.memberid,
       id: Date.now(),
       billno: form.billno,
@@ -223,6 +246,16 @@ const Sales = () => {
     setTable((prev) => [...prev, newRecord]);
     setForm(defaultvalues);
   }, [form]);
+
+  const calculateExpiry = (startDate, duration) => {
+    if (!startDate || !duration) return "";
+
+    const date = new Date(startDate);
+    date.setMonth(date.getMonth() + Number(duration));
+
+    // Format back to YYYY-MM-DD for input type="date"
+    return date.toISOString().split("T")[0];
+  };
 
   const saveRecord = async () => {
     try {
@@ -466,6 +499,29 @@ const Sales = () => {
               <MdAdd className="text-xl" />
             </button>
           </section>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex flex-col text-sm md:mx-1">
+            <label className="mb-1">Start Date:</label>
+            <input
+              type="date"
+              name="startDate"
+              value={form.startDate}
+              onChange={handleSale}
+              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
+            />
+          </div>
+          <div className="flex flex-col text-sm md:mx-1">
+            <label className="mb-1">End Date:</label>
+            <input
+              readOnly
+              type="date"
+              name="expiryDate"
+              value={form.expiryDate}
+              onChange={handleSale}
+              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
+            />
+          </div>
         </div>
       </div>
 

@@ -88,20 +88,14 @@ salerouter.post('/addsale', async (req, res) => {
                 });
             }
 
-            // Start date = TODAY (as you requested)
-            const startDate = new Date();
-
-            // Expiry = startDate + duration (months)
-            const expiryDate = new Date(startDate);
-            expiryDate.setMonth(expiryDate.getMonth() + Number(item.duration));
 
             memberPlanData.push({
                 branchId: branchid,
                 memberId: item.memberid,
                 planId: item.plan,
                 saleUniqueId: saleUniqueId, // SAME ID
-                startDate: startDate.toISOString().split("T")[0],
-                expiryDate: expiryDate.toISOString().split("T")[0],
+                startDate: item.startDate,
+                expiryDate: item.expiryDate,
                 durationInMonths: Number(item.duration),
                 allotedstaff: item.staff,
                 isActive: true,
@@ -128,6 +122,7 @@ salerouter.post('/addsale', async (req, res) => {
         /* ---------------- TEMP RESPONSE ---------------- */
 
         res.json({
+            saleUniqueId,
             status: response.data.status,
             message: "Sale Generated Successfully",
         });
