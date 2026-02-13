@@ -15,7 +15,8 @@ dashboardRouter.post("/charts", (req, res) => {
             message: "Required parameters missing for charts (branchid / fromdate / todate)"
         });
     }
-    
+    res.send(branchid)
+
 });
 dashboardRouter.post("/cards", async (req, res) => {
     const { branchid, fromdate, todate } = req.body;
