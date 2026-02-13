@@ -44,8 +44,8 @@ export default function InvoiceBill() {
         console.log(response.data);
       } catch (err) {
         Swal.fire({
-          icon: "error",
-          title: "Error in Fetching Details",
+          icon: err.data.icon,
+          title: err.data.title,
         });
       }
     };

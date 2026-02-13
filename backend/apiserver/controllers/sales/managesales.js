@@ -137,5 +137,15 @@ salerouter.post('/addsale', async (req, res) => {
 
 
 });
+salerouter.get("/getsaledetail/:saleUniqueId", async (req, res) => {
+    const saleUniqueId = req.params.saleUniqueId;
+    try {
+        const response = await axios.get(`${DBSERVERURL}/db/sales/getsaledetail/${saleUniqueId}`)
+        res.send(response)
+    }
+    catch (err) {
+
+    }
+});
 
 export default salerouter;

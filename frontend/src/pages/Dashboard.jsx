@@ -28,7 +28,6 @@ const Dashboard = () => {
   }));
 
   const [cardData, setCardData] = useState({});
-  const [chartData, setChartData] = useState([]);
 
   const dashboardcards = [
     { title: "Total Members", key: "totalmembers", icon: <MdGroups /> },
@@ -78,7 +77,7 @@ const Dashboard = () => {
     loadDashboard().finally(() => {
       loadingRef.current = false;
     });
-  }, [data.branchid, data.fromdate, data.todate]);
+  }, []);
 
   const loadDashboard = async () => {
     let isError = false;
@@ -95,7 +94,7 @@ const Dashboard = () => {
 
       const [cardRes, chartRes] = await Promise.all([
         axios.post(`${baseUrl}/api/dashboard/cards`, payload),
-        // axios.post(`${baseUrl}/api/dashboard/charts`, payload),
+        axios.post(`${baseUrl}/api/dashboard/charts`, payload),
       ]);
       setCardData(cardRes.data);
 
@@ -184,7 +183,9 @@ const Dashboard = () => {
             Charts
           </h2>
 
-          <DashboardCharts chartData={chartData} />
+          <DashboardCharts
+            selecteddate={{ fromdate: data.fromdate, todate: data.todate }}
+          />
         </div>
       </div>
     </div>
