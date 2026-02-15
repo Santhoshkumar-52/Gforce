@@ -1,4 +1,2 @@
-const baseUrl = 'http://localhost:5000'
-
-
-export { baseUrl }
+const baseUrl = "https://gforce-apibackend.onrender.com";
+export { baseUrl };
