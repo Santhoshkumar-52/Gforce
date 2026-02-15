@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MaterialReactTable } from "material-react-table";
 import { MdEdit } from "react-icons/md";
-import useStore from "../store/useStore";
+import useStore from "../store/useStore.js";
 import axios from "axios";
 
 const MemberTable = ({ onEdit }) => {

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import "../styles/dashboard.css";
-import CommonValueContext from "../layouts/CommonvalueContext";
+import CommonValueContext from "../layouts/CommonvalueContext.jsx";
 import {
   MdOutlinePointOfSale,
   MdGroups,
@@ -9,9 +9,9 @@ import {
   MdAutorenew,
   MdPersonAddAlt1,
 } from "react-icons/md";
-import DashboardCharts from "../pageUIBlocks/Dashboardcharts";
-import Clientdropdown from "../components/Clientdropdown";
-import DurationSelector from "../components/DurationSelector";
+import DashboardCharts from "../pageUIBlocks/Dashboardcharts.jsx";
+import Clientdropdown from "../components/Clientdropdown.jsx";
+import DurationSelector from "../components/DurationSelector.jsx";
 import axios from "axios";
 import Swal from "sweetalert2";
 

@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import "../styles/member.css";
 import axios from "axios";
 import useStore from "../store/useStore.js";
-import MemberTable from "../pageUIBlocks/MemberTable";
+import MemberTable from "../pageUIBlocks/MemberTable.jsx";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
