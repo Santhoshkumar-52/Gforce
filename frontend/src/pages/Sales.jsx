@@ -257,23 +257,6 @@ const Sales = () => {
     return date.toISOString().split("T")[0];
   };
 
-  const saveRecord = async () => {
-    try {
-      const res = await axios.post(`${baseUrl}/api/sales/addsale`, table);
-      Swal.fire({
-        icon: res.status,
-        title: res.title,
-        text: res.message,
-      });
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops",
-        text: err.message,
-      });
-    }
-  };
-
   // -------------------------
   // deleteRecord: removes record from table
   // -------------------------

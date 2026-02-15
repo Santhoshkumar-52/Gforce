@@ -79,6 +79,7 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
       if (res.data?.status === "success") {
         // open blank window (or image URL) and trigger print
         window.open(`/sales/invoice/${res.data.saleUniqueId}`, "_blank");
+        changeOpen(false);
       } else {
         // backend responded but status is not success
         Swal.fire({

@@ -16,6 +16,7 @@ const memberPlanSchema = new mongoose.Schema(
         },
         branchId: {
             type: mongoose.Schema.Types.ObjectId,
+            ref: "branchmaster",
             required: true,
         },
 
@@ -25,8 +26,10 @@ const memberPlanSchema = new mongoose.Schema(
             index: true,
         },
         allotedstaff: {
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "staffmaster",
             required: true,
+            index: true,
         },
 
         startDate: {
