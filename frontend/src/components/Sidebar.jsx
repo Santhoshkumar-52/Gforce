@@ -7,6 +7,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaChartBar,
+  FaUserCheck,
 } from "react-icons/fa";
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ export default function Sidebar() {
     { name: "Members", icon: <FaUsers />, path: "/member" },
     { name: "Reports", icon: <FaChartBar />, path: "/reports" },
     { name: "Settings", icon: <FaCog />, path: "/settings" },
+    { name: "Attendance", icon: <FaUserCheck />, path: "/m_attendance" },
   ];
 
   const handleLogout = () => {
@@ -58,6 +60,7 @@ export default function Sidebar() {
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
+            target={item.path == "/m_attendance" ? "_blank" : ""}
             to={item.path}
             className={({ isActive }) =>
               `flex items-center gap-3 p-3 rounded mx-2 my-1 ${

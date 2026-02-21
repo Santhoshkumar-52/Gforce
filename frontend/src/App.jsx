@@ -8,6 +8,7 @@ import Login from "./pages/Login.jsx";
 import Member from "./pages/Member.jsx";
 import Sales from "./pages/Sales.jsx";
 import InvoiceBill from "./components/InvoiceBill.jsx";
+import Memberattendance from "./pages/Memberattendance.jsx";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/member" element={<Member />} />
           <Route path="/sales" element={<Sales />} />
+          <Route path="/m_attendance" element={<Memberattendance />} />
           <Route
             path="/sales/invoice/:saleUniqueId"
             element={<InvoiceBill />}
