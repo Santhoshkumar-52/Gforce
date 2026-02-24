@@ -94,3 +94,25 @@ db.salemaster.aggregate([
     },
   },
 ]);
+
+// member attendance
+
+db.membermaster.aggregate([
+  {
+    $match: {
+      _id: ObjectId("69912ecbcb06e45c837cacf7"),
+      branchId: ObjectId("6969e6fc89c79021fb7b28f3"),
+    },
+  },
+  {
+    $lookup: {
+      from: "memberplan",
+      localField: "_id",
+      foreignField: "memberId",
+      as: "mbp",
+    },
+    $sort: {
+      _id: -1,
+    },
+  },
+]);

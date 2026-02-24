@@ -1,35 +1,43 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import "../styles/mattendance.css";
 import Swal from "sweetalert2";
 import CommonValueContext from "../layouts/CommonvalueContext.jsx";
-
 import { Modal, Box } from "@mui/material";
 import { MaterialReactTable } from "material-react-table";
+import axios from "axios";
 
 export default function Memberattendance() {
-  const { baseUrl, branchid } = useContext(CommonValueContext);
+  const { getbranchdetails, branchdata, branchid, baseUrl } =
+    useContext(CommonValueContext);
 
-  const [memberId, setMemberId] = useState("");
-  const [open, setOpen] = useState(false);
-
-  // Dummy member data (replace with API later)
-  const [memberData, setMemberData] = useState({
-    name: "John Doe",
-    id: "M123",
-    age: 25,
-    plan: "Premium",
-    phone: "9876543210",
-    image: "https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?w=500",
+  // 🔹 GROUPED STATE (clean)
+  const [state, setState] = useState({
+    memberId: "",
+    memberData: null,
+    open: false,
+    attendanceData: [],
   });
 
-  // Dummy attendance table
-  const attendanceData = [
-    { date: "2026-02-20", time: "07:10 AM", status: "IN" },
-    { date: "2026-02-19", time: "07:05 AM", status: "IN" },
-    { date: "2026-02-18", time: "06:55 AM", status: "OUT" },
-    { date: "2026-02-17", time: "07:20 AM", status: "IN" },
-    { date: "2026-02-16", time: "07:15 AM", status: "OUT" },
-  ];
+  const currentTimeRef = useRef(null);
+
+  // 🔹 Fetch branch details
+  useEffect(() => {
+    getbranchdetails();
+  }, []);
+
+  // 🔹 Live clock (fixed memory leak)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentTimeRef.current) {
+        const now = new Date();
+        currentTimeRef.current.textContent = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+      }
+    }, 1000);
+
+    return () => clearInterval(interval); // ✅ cleanup
+  }, []);
+
+  // 🔹 Table data
 
   const columns = [
     { accessorKey: "date", header: "Date" },
@@ -37,8 +45,9 @@ export default function Memberattendance() {
     { accessorKey: "status", header: "Status" },
   ];
 
+  // 🔹 Input validation
   const validateInput = () => {
-    if (!memberId) {
+    if (!state.memberId) {
       Swal.fire({
         toast: true,
         position: "top-end",
@@ -52,59 +61,70 @@ export default function Memberattendance() {
     return true;
   };
 
-const handleCheckOut = () => {
-  if (!validateInput()){
-    return Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: "warning",
-      title: "Please enter Member ID",
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
+  // 🔹 Check IN
+  const handleCheckIn = async () => {
+    if (!validateInput()) return;
+
+    // TODO: Replace with API call
+    try {
+      const memberdata = await axios.post(`${baseUrl}/api/attendance/checkin`, {
+        branchid,
+        memberid: state.memberId,
+      });
+
+      const result = memberdata.data;
+      if (result.status === "info") {
+        return Swal.fire({
+          icon: "info",
+          text: result.message,
+          confirmButtonText: "OK",
+        });
+      }
+
+      setState((prev) => ({
+        ...prev,
+        memberData: result.result[0],
+        open: true,
+      }));
+    } catch (err) {
+      console.error("Error during check-in:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Check-in Failed",
+        text: "An error occurred while checking in. Please try again.",
+      });
+      return;
+    }
+    // setTimeout(handleClose, 20000);
+  };
+
+  // 🔹 Check OUT
+  const handleCheckOut = () => {
+    if (!validateInput()) return;
+
+    const currentTime = new Date().toLocaleTimeString();
+
+    Swal.fire({
+      icon: "success",
+      title: "Checked Out",
+      html: `
+        <b>${state.memberData?.name || "Member"}</b><br/>
+        Time: ${currentTime}
+      `,
     });
+
+    setState((prev) => ({ ...prev, memberId: "" }));
   };
 
-  const currentTime = new Date().toLocaleTimeString();
-
-  Swal.fire({
-    icon: "success",
-    title: "Checked Out",
-    html: `
-      <b>${memberData.name}</b><br/>
-      Time: ${currentTime}
-    `,
-    confirmButtonText: "OK",
-  });
-
-  setMemberId("");
-};
-const handleCheckIn = () => {
-  if (!validateInput()){
-     return Swal.fire({
-       toast: true,
-       position: "top-end",
-       icon: "warning",
-       title: "Please enter Member ID",
-       showConfirmButton: false,
-       timer: 2000,
-       timerProgressBar: true,
-     });
-  };
-
-  // Later → API call
-  setMemberData((prev) => ({ ...prev, id: memberId }));
-
-  setOpen(true);
-
-  setTimeout(() => {
-    handleClose();
-  }, 20000);
-};
-
+  // 🔹 Close modal
   const handleClose = () => {
-    setOpen(false);
-    setMemberId("");
+    setState((prev) => ({
+      ...prev,
+      open: false,
+      memberId: "",
+      memberData: null,
+      attendanceData: [],
+    }));
   };
 
   return (
@@ -116,77 +136,89 @@ const handleCheckIn = () => {
     >
       {/* CENTER INPUT */}
       <div className="glass-left p-10 rounded-2xl shadow-xl w-[400px] text-center">
+        <div className="h-[200px] flex items-center justify-center rounded-xl overflow-hidden">
+          <img
+            src={branchdata?.branchImage}
+            alt="branch_logo"
+            className="h-full w-full object-cover"
+          />
+        </div>
+
         <h2 className="text-2xl font-bold text-white mb-6">
-          MAESTRO Fitness Studio
+          {branchdata?.branchname}
         </h2>
 
         <input
           type="text"
           placeholder="Enter Member ID"
-          value={memberId}
-          onChange={(e) => setMemberId(e.target.value)}
+          value={state.memberId}
+          onInput={(e) =>
+            setState((prev) => ({ ...prev, memberId: e.target.value }))
+          }
           className="w-full p-3 rounded-lg mb-4 outline-none input-style"
         />
 
         <div className="flex gap-3">
           <button
             onClick={handleCheckIn}
-            className="w-full py-3 rounded-lg font-semibold primary-btn cursor-pointer transition-transform hover:scale-105"
+            className="w-full py-3 rounded-lg font-semibold primary-btn hover:scale-105"
           >
             Check IN
           </button>
 
           <button
             onClick={handleCheckOut}
-            className="w-full py-3 rounded-lg font-semibold bg-red-500 text-white cursor-pointer transition-transform hover:scale-105"
+            className="w-full py-3 rounded-lg font-semibold bg-red-500 text-white hover:scale-105"
           >
             Check OUT
           </button>
         </div>
       </div>
 
-      {/* FULL SCREEN MODAL */}
-      <Modal open={open}>
+      {/* MODAL */}
+      <Modal open={state.open}>
         <Box
-          className="w-full h-full p-6 flex flex-col gap-6"
-          sx={{
-            backdropFilter: "blur(10px)",
-          }}
+          className="w-full h-full p-6 flex flex-col  gap-6"
+          sx={{ backdropFilter: "blur(10px)" }}
         >
-          {/* CLOSE BUTTON */}
+          {/* CLOSE */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-6 text-white text-2xl z-50"
+            className="absolute top-4 right-6 text-white text-2xl"
           >
             ✕
           </button>
 
-          {/* TOP SECTION */}
-          <div className="glass-right rounded-2xl p-6 flex gap-6 h-[40%]">
-            {/* LEFT IMAGE */}
-            <div className="w-[40%] h-full">
+          {/* TOP */}
+          <div className="glass-right rounded-2xl p-6 flex flex-col sm:flex-row  gap-6 h-[40%]">
+            <div className="w-[20%]">
               <img
-                src={memberData.image}
-                alt="member"
-                className="w-full h-full object-cover rounded-xl"
+                src={`/memberImages/${state.memberData?.memberImage}`}
+                alt="Profile Picture"
+                className="w-full h-full object-contain rounded-xl"
               />
             </div>
 
-            {/* RIGHT DETAILS */}
             <div className="text-white flex flex-col justify-center space-y-3">
-              <h2 className="text-2xl font-bold">{memberData.name}</h2>
-              <p>ID: {memberData.id}</p>
-              <p>Age: {memberData.age}</p>
-              <p>Plan: {memberData.plan}</p>
-              <p>Phone: {memberData.phone}</p>
+              <h2 className="text-2xl font-bold">
+                {[state.memberData?.firstname, state.memberData?.lastname].join(
+                  " ",
+                )}
+              </h2>
+              <section>
+                <p>ID: {state.memberData?.customerId}</p>
+                <p>Plan: {state.memberData?.planDetails.plan_name}</p>
+                <p>Phone: {state.memberData?.mobile}</p>
+                <p>Expiring On: {state.memberData?.latestPlan.expiryDate}</p>
+              </section>
             </div>
           </div>
 
-          {/* BOTTOM SECTION (TABLE) */}
+          {/* TABLE */}
           <div className="glass-right rounded-2xl p-4 h-[60%] overflow-auto">
             <MaterialReactTable
               columns={columns}
-              data={attendanceData}
+              data={state.attendanceData}
               enableTopToolbar={false}
               enableBottomToolbar={false}
             />

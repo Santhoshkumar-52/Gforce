@@ -8,6 +8,7 @@ import memberRouters from "./controllers/member/member.js";
 import commonRouter from "./controllers/commonvalues.js";
 import salerouter from "./controllers/sales/managesales.js";
 import dashboardRouter from "./controllers/dashboard/dashboardController.js";
+import attedanceRouter from "./controllers/attendance/memberAttedanceContr.js";
 
 
 /* =========================
@@ -18,6 +19,7 @@ router.use('/member', memberRouters)
 router.use('/commonvalue', commonRouter)
 router.use('/sales', salerouter)
 router.use('/dashboard', dashboardRouter)
+router.use("/attendance", attedanceRouter);
 
 /* =========================
    FALLBACK (OPTIONAL)
