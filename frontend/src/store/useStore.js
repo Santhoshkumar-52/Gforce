@@ -150,7 +150,7 @@ const useStore = create((set, get) => ({
           branchid,
         },
       );
-      let data = response.data;
+      let data = response.data.branchdata;
       localStorage.setItem("branchdetails", data);
       data = decodeIfExists(data);
       set({

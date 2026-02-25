@@ -4,6 +4,14 @@ import axios from "axios";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 dotenv.config();
+
+import planmaster from "../model/planmaster.js";
+import gstmaster from "../model/gstmaster.js";
+import staffmaster from "../model/staffmaster.js";
+import discountmaster from "../model/discountmaster.js";
+import Branchmaster from "../model/branchmaster.js";
+import mongoose from "mongoose";
+
 const DBSERVERURL = process.env.DBSERVERURL;
 const secretekey = process.env.JWT_SECRET_KEY;
 
@@ -24,14 +32,28 @@ commonRouter.post("/planid", async (req, res) => {
     });
   }
   try {
-    const response = await axios.post(`${DBSERVERURL}/db/commonvalue/planid`, {
-      branchid,
-      groupid,
+    const plans = await planmaster.find({
+      $and: [{ is_active: true }, { branchId: branchid }],
     });
-    const planids = converttoken(response.data.planids);
-    res.status(200).json({ planids });
+
+    if (!plans.length) {
+      return res.status(404).json({
+        status: "error",
+        message: "No Plans Found",
+      });
+    }
+    console.log("Fetched Plans");
+    const planids = converttoken(plans);
+    res.status(200).json({
+      status: "success",
+      planids,
+    });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
 commonRouter.post("/gstid", async (req, res) => {
@@ -42,15 +64,30 @@ commonRouter.post("/gstid", async (req, res) => {
       message: "branchid and groupid are never received in api request",
     });
   }
+
   try {
-    const response = await axios.post(`${DBSERVERURL}/db/commonvalue/gstid`, {
-      branchid,
-      groupid,
+    const gstids = await gstmaster.find({
+      $and: [{ is_active: true }, { branchId: branchid }],
     });
-    const gstids = converttoken(response.data.gstids);
-    res.status(200).json({ gstids });
+
+    if (!gstids.length) {
+      return res.status(404).json({
+        status: "error",
+        message: "No gstids Found",
+      });
+    }
+    console.log("Fetched GST");
+    const gst = converttoken(gstids);
+    res.status(200).json({
+      status: "success",
+      gstids: gst,
+    });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
 commonRouter.post("/staffid", async (req, res) => {
@@ -61,64 +98,123 @@ commonRouter.post("/staffid", async (req, res) => {
       message: "branchid and groupid are never received in api request",
     });
   }
+  // try {
+  //   const response = await axios.post(`${DBSERVERURL}/db/commonvalue/staffid`, {
+  //     branchid,
+  //     groupid,
+  //   });
+  //   const staffids = converttoken(response.data.staffids);
+  //   res.status(200).json({ staffids });
+  // } catch (err) {
+  //   res.status(500).json({ status: "error", message: err.message });
+  // }
+
   try {
-    const response = await axios.post(`${DBSERVERURL}/db/commonvalue/staffid`, {
-      branchid,
-      groupid,
+    const staffids = await staffmaster.find({
+      $and: [
+        { branchId: branchid },
+        { activeStatus: true },
+        { groupId: { $ne: groupid } },
+      ],
     });
-    const staffids = converttoken(response.data.staffids);
-    res.status(200).json({ staffids });
+
+    if (!staffids.length) {
+      return res.status(404).json({
+        status: "error",
+        message: "No staffid Found",
+      });
+    }
+    const staffs = converttoken(staffids);
+    console.log("Fetched Staffs");
+    res.status(200).json({
+      status: "success",
+      staffids: staffs,
+    });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
 commonRouter.post("/discountid", async (req, res) => {
   const { branchid, groupid } = req.body;
-  if (!branchid || !groupid) {
+  if (!branchid) {
     return res.status(400).json({
       status: "error",
       message: "branchid and groupid are never received in api request",
     });
   }
   try {
-    const response = await axios.post(
-      `${DBSERVERURL}/db/commonvalue/discountid`,
-      { branchid, groupid },
-    );
-    const discountcategoryid = converttoken(response.data.discountcategoryid);
-    res.status(200).json({ discountcategoryid });
+    const discountcategoryid = await discountmaster.find({
+      $and: [{ branchId: branchid }, { activestatus: true }],
+    });
+    if (!discountcategoryid.length) {
+      return res.status(404).json({
+        status: "error",
+        message: "No Discounts Found",
+      });
+    }
+    const discount = converttoken(discountcategoryid);
+    console.log("Fetched Discounts");
+    res.status(200).json({
+      status: "success",
+      discountcategoryid: discount,
+    });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
 commonRouter.post("/clientid", async (req, res) => {
   const { branch } = req.body || "";
 
   try {
-    const response = await axios.post(
-      `${DBSERVERURL}/db/commonvalue/clientid`,
-      { branch },
-    );
-    const branchid = converttoken(response.data.branchid);
-    res.status(200).json({ branchid });
+    // Always filter by activeStatus
+    const query = { activeStatus: true };
+
+    // If branch exists, convert to ObjectId
+    if (branch) {
+      query._id = new mongoose.Types.ObjectId(branch);
+    }
+
+    // Fetch branches
+    const branches = await Branchmaster.find(query).lean();
+
+    if (!branches.length) {
+      return res.status(404).json({
+        status: "error",
+        message: "No branches found",
+      });
+    }
+    const branchid = converttoken(branches);
+    console.log("Fetched Branches");
+    res.status(200).json({
+      status: "success",
+      branchid,
+    });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
 commonRouter.post("/getbranchdetails", async (req, res) => {
   const { branchid } = req.body || "";
-  console.log(branchid);
 
-  try {
-    const response = await axios.post(
-      `${DBSERVERURL}/db/commonvalue/getbranchdetails`,
-      { branchid },
-    );
-    const branchdata = converttoken(response.data.branchdata);
-    res.send(branchdata);
-  } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
-  }
+  const result = await Branchmaster.findById(branchid);
+  console.log("Fetched Branch Details");
+  const branchdata = converttoken(result);
+  res.status(200).json({
+    status: "success",
+    branchdata,
+  });
 });
 
 export default commonRouter;
