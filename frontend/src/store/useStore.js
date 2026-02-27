@@ -36,7 +36,7 @@ const useStore = create((set, get) => ({
       localStorage.setItem("branchid", userData.staff.branchId),
       set({
         user: userData,
-        branchid: userData.staff.branchid,
+        branchid: userData.staff.branchId,
       }));
   },
   logout: () => {
