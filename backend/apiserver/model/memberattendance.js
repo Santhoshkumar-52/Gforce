@@ -31,7 +31,6 @@ const attendanceSchema = new mongoose.Schema(
       type: String,
       enum: ["IN", "OUT"],
       default: "IN",
-      index: true,
     },
 
     autoEnd: {
