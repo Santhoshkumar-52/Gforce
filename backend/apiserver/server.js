@@ -15,6 +15,9 @@ app.use(express.urlencoded({ extended: true }));
    HEALTH CHECK
 ===================== */
 app.use("/api", mainroute);
+app.get("/", (req, res) => {
+  res.send("API Server is running 🔒");
+});
 
 const PORT = process.env.APIPORT;
 
