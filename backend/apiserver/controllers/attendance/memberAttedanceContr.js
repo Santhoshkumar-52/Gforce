@@ -2,7 +2,6 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import memberplan from "../../model/memberplan.js";
 import membermaster from "../../model/customermaster.js";
 import m_attendanceLog from "../../model/memberattendance.js";
 
