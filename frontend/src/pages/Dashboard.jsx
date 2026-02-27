@@ -9,7 +9,7 @@ import {
   MdAutorenew,
   MdPersonAddAlt1,
 } from "react-icons/md";
-import DashboardCharts from "../pageUIBlocks/Dashboardcharts";
+import DashboardCharts from "../pageUIBlocks/DashboardCharts";
 import Clientdropdown from "../components/Clientdropdown";
 import DurationSelector from "../components/DurationSelector";
 import axios from "axios";
