@@ -46,7 +46,7 @@ export default function Sidebar() {
         className="flex items-center justify-between p-4 border-b"
         style={{ borderColor: "var(--sidebar-border)" }}
       >
-        {isOpen && <span className="font-bold text-lg">Geforce</span>}
+        {isOpen && <span className="font-bold text-lg">Gforce</span>}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="p-2 hover:rounded"

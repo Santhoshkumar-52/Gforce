@@ -1,14 +1,18 @@
 import { useContext, useEffect, useState } from "react";
 import "../styles/admin.css";
-import ReusableTable from "../components/ReusableTable.jsx";
 import TrainerBg from "../assets/Trainer.png";
 import CommonValueContext from "../layouts/CommonvalueContext";
 import axios from "axios";
+//components
 import Swal from "sweetalert2";
+import ReusableTable from "../components/ReusableTable.jsx";
+import { Modal, Box } from "@mui/material";
+//icons
+import { MdEdit } from "react-icons/md";
 
 const Trainers = () => {
   const { branchid, baseUrl } = useContext(CommonValueContext);
-  const [search, setSearch] = useState("");
+  const [trainers, setTrainers] = useState([]);
 
   useEffect(() => {
     getTrainer();
@@ -16,38 +20,72 @@ const Trainers = () => {
 
   const getTrainer = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/trainer/getTrainer`, {
+      // ✅ Show loader FIRST
+      Swal.fire({
+        text: "Fetching Trainers. Stay Tuned!",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      const response = await axios.get(`${baseUrl}/api/staff`, {
         params: {
           branchid: branchid,
         },
       });
+
       const data = response.data;
+      setTrainers(data.staffDetails); // set trainers from response
+
+      if (data.status === "success") Swal.close(); // ✅ close loader
     } catch (error) {
+      Swal.close(); // ✅ always close loader on error
+
       Swal.fire({
-        icon: error.response?.status || "error",
-        title: error.response?.title || "Error",
-        text:
-          error.response?.message ||
-          "An error occurred while fetching trainers.",
+        icon: error.response?.data?.status || "error",
+        text: error.response?.data?.text || "Error",
       });
     }
   };
+  const handleEdit = (id) => {
+    console.log(id);
+  };
 
   const columns = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "staffid", header: "Staff ID" },
-    { accessorKey: "phone", header: "Mobile No" },
+    { accessorKey: "staffId", header: "Staff ID" },
+    { accessorKey: "fullName", header: "Name" },
     {
-      accessorKey: "status",
+      header: "Group",
+      Cell: ({ row }) => row.original.groupDetails?.[0]?.groupName || "-",
+    },
+    { accessorKey: "mobile", header: "Mobile No" },
+    {
+      accessorKey: "activeStatus",
       header: "Status",
-      Cell: ({ cell }) => (
-        <span
-          className={`font-semibold ${
-            cell.getValue() === "Active" ? "text-green-600" : "text-red-500"
-          }`}
+      Cell: ({ cell }) => {
+        const value = cell.getValue();
+
+        return (
+          <span
+            className={`font-semibold ${
+              value ? "text-green-600" : "text-red-500"
+            }`}
+          >
+            {value ? "Active" : "Inactive"}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Action",
+      Cell: ({ row }) => (
+        <button
+          onClick={() => handleEdit(row.original._id)}
+          className="bg-red-500 text-white px-3 py-1 rounded cursor-pointer"
         >
-          {cell.getValue()}
-        </span>
+          <MdEdit />
+        </button>
       ),
     },
   ];
@@ -72,7 +110,7 @@ const Trainers = () => {
 
       {/* Table */}
       <div className="glass-card p-4">
-        <ReusableTable columns={columns} data={[]} />
+        <ReusableTable columns={columns} data={trainers} />
       </div>
     </div>
   );

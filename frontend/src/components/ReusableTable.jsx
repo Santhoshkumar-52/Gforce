@@ -7,7 +7,7 @@ const ReusableTable = ({
   enableRowActions = false,
   renderRowActions,
   loading = false,
-  maxHeight = "500px",
+  maxHeight = "350px",
 }) => {
   return (
     <MaterialReactTable
@@ -23,6 +23,9 @@ const ReusableTable = ({
       enableBottomToolbar
       enableStickyHeader
       enableFullScreenToggle={false}
+      initialState={{
+        density: "compact", // "comfortable" | "spacious"
+      }}
       // ✅ Scroll
       muiTableContainerProps={{
         sx: {
