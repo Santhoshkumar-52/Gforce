@@ -9,26 +9,27 @@ import commonRouter from "./controllers/commonvalues.js";
 import salerouter from "./controllers/sales/managesales.js";
 import dashboardRouter from "./controllers/dashboard/dashboardController.js";
 import attedanceRouter from "./controllers/attendance/memberAttedanceContr.js";
-
+import staffRouter from "./controllers/staff/staffController.js";
 
 /* =========================
    ROUTE BINDINGS
 ========================= */
-router.use('/login', loginrouter)
-router.use('/member', memberRouters)
-router.use('/commonvalue', commonRouter)
-router.use('/sales', salerouter)
-router.use('/dashboard', dashboardRouter)
+router.use("/login", loginrouter);
+router.use("/member", memberRouters);
+router.use("/commonvalue", commonRouter);
+router.use("/sales", salerouter);
+router.use("/dashboard", dashboardRouter);
 router.use("/attendance", attedanceRouter);
+router.use("/staff", staffRouter);
 
 /* =========================
    FALLBACK (OPTIONAL)
 ========================= */
 router.use((req, res) => {
-   res.status(404).json({
-      status: "error",
-      message: "DB route not found"
-   });
+  res.status(404).json({
+    status: "error",
+    message: "DB route not found",
+  });
 });
 
 export default router;

@@ -116,3 +116,31 @@ db.membermaster.aggregate([
     },
   },
 ]);
+
+// getting staff details with branch id
+db.staffmaster.aggregate([
+  {
+    $match: {
+      branchId: new ObjectId(branchid),
+    },
+  },
+  {
+    $lookup: {
+      from: "groupmaster",
+      localField: "groupId",
+      foreignField: "_id",
+      as: "groupDetails",
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      fullName: 1,
+      staffid: 1,
+      phone: 1,
+      activeStatus: 1,
+      mobile: 1,
+      groupName: { $arrayElemAt: ["$groupDetails.groupName", 0] },
+    },
+  },
+]);

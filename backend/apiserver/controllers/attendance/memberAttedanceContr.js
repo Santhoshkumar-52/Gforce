@@ -1,5 +1,4 @@
 import express from "express";
-import axios from "axios";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import membermaster from "../../model/customermaster.js";
@@ -7,24 +6,25 @@ import m_attendanceLog from "../../model/memberattendance.js";
 
 dotenv.config();
 
-const attedanceRouter = express.Router();
-const DBSERVERURL = process.env.DBSERVERURL;
+const router = express.Router();
+const { ObjectId } = mongoose.Types;
 
-attedanceRouter.post("/checkin", async (req, res) => {
-  console.log("Checking Attendance for Member");
+const getToday = () => new Date().toISOString().split("T")[0];
 
+router.post("/checkin", async (req, res) => {
   try {
     const { branchid, memberid } = req.body;
+
     if (!branchid || !memberid) {
       return res.status(400).json({
         status: "error",
-        message: "Branch ID and Member ID never Received for API Server",
+        message: "Branch ID and Member ID required",
       });
     }
 
-    const { ObjectId } = mongoose.Types;
+    const today = getToday();
 
-    const result = await membermaster.aggregate([
+    const member = await membermaster.aggregate([
       {
         $match: {
           customerId: parseInt(memberid),
@@ -41,31 +41,46 @@ attedanceRouter.post("/checkin", async (req, res) => {
                 $expr: {
                   $and: [
                     { $eq: ["$memberId", "$$memberId"] },
-                    { $eq: ["$isExpired", false] },
                     { $eq: ["$isActive", true] },
                   ],
                 },
               },
             },
-            {
-              $sort: { _id: -1 }, // latest plan
-            },
-            {
-              $limit: 1,
-            },
+            { $sort: { _id: -1 } },
+            { $limit: 1 },
           ],
           as: "latestPlan",
         },
       },
+      { $unwind: "$latestPlan" },
       {
-        $unwind: {
-          path: "$latestPlan",
-          preserveNullAndEmptyArrays: false, // if no plan exists
+        $lookup: {
+          from: "planmaster",
+          localField: "latestPlan.planId",
+          foreignField: "_id",
+          as: "planDetails",
         },
       },
+      { $unwind: "$planDetails" },
+      {
+        $lookup: {
+          from: "staffmaster",
+          localField: "latestPlan.allotedstaff",
+          foreignField: "_id",
+          as: "staffDetails",
+        },
+      },
+      { $unwind: "$staffDetails" },
       {
         $addFields: {
-          "latestPlan.expiryDate": {
+          daysRemaining: {
+            $dateDiff: {
+              startDate: new Date(),
+              endDate: "$latestPlan.expiryDate",
+              unit: "day",
+            },
+          },
+          "latestPlan.expiryDateFormatted": {
             $dateToString: {
               format: "%d-%m-%Y",
               date: "$latestPlan.expiryDate",
@@ -73,62 +88,180 @@ attedanceRouter.post("/checkin", async (req, res) => {
           },
         },
       },
-      {
-        $lookup: {
-          from: "planmaster",
-          let: { planId: "$latestPlan.planId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$_id", "$$planId"] },
-                    { $eq: ["$is_active", true] },
-                    // add more conditions here
-                  ],
-                },
-              },
-            },
-          ],
-          as: "planDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$planDetails",
-          preserveNullAndEmptyArrays: false, // like INNER JOIN
-        },
-      },
     ]);
 
-    if (result.length < 1) {
+    if (!member.length) {
       return res.status(200).json({
         status: "info",
-        message:
-          "Oops, No Plan Found for this Member.Try later or Please Contact Admin",
+        message: "No active plan found",
       });
     }
 
-    const attendanceRecord = await m_attendanceLog.create({
+    const memberData = member[0];
+
+    const existing = await m_attendanceLog.exists({
       branchId: new ObjectId(branchid),
-      memberId: result[0]._id,
+      memberId: memberData._id,
+      attendanceDate: today,
+    });
+
+    if (existing) {
+      return res.status(200).json({
+        status: "info",
+        message: "Already checked in today",
+      });
+    }
+
+    const attendance = await m_attendanceLog.create({
+      branchId: new ObjectId(branchid),
+      memberId: memberData._id,
       checkIn: new Date(),
+      attendanceDate: today,
       status: "IN",
     });
 
-    console.log("Plan Found for this Member");
+    const report = await m_attendanceLog.aggregate([
+      {
+        $match: {
+          memberId: memberData._id,
+        },
+      },
+      {
+        $facet: {
+          // 📊 1️⃣ Date-wise report
+          report: [
+            { $sort: { checkIn: 1 } },
+            {
+              $group: {
+                _id: "$attendanceDate",
+                firstCheckIn: { $first: "$checkIn" },
+                lastCheckOut: { $last: "$checkOut" },
+                finalStatus: { $last: "$status" },
+                totalDurationPerDay: { $sum: "$durationMinutes" },
+                totalVisitsPerDay: { $sum: 1 },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                date: "$_id",
+                checkIn: "$firstCheckIn",
+                checkOut: "$lastCheckOut",
+                status: "$finalStatus",
+                duration: "$totalDurationPerDay",
+              },
+            },
+            { $sort: { date: -1 } },
+          ],
 
-    res.status(200).json({
+          // 📈 2️⃣ Overall summary
+          summary: [
+            {
+              $group: {
+                _id: null,
+                totalDuration: { $sum: "$durationMinutes" },
+                totalCheckins: { $sum: 1 },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                totalDuration: 1,
+                totalCheckins: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+    return res.status(200).json({
       status: "ok",
-      result,
+      message: "Check-in successful",
+      attendance,
+      member: memberData,
+      report,
     });
   } catch (error) {
-    console.error("Error in attendance route:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
-      message: "An error occurred while processing attendance data",
+      message: "Check-in failed",
     });
   }
 });
 
-export default attedanceRouter;
+router.post("/checkout", async (req, res) => {
+  try {
+    const { branchid, memberid } = req.body;
+
+    if (!branchid || !memberid) {
+      return res.status(400).json({
+        status: "error",
+        message: "Branch ID and Member ID required",
+      });
+    }
+
+    const today = getToday();
+
+    // 🔍 Find member
+    const member = await membermaster.findOne({
+      customerId: parseInt(memberid),
+      branchId: new ObjectId(branchid),
+    });
+
+    if (!member) {
+      return res.status(200).json({
+        status: "info",
+        message: "Member not found",
+      });
+    }
+
+    // 🔍 Find today's check-in (latest IN without OUT)
+    const attendance = await m_attendanceLog
+      .findOne({
+        memberId: member._id,
+        branchId: new ObjectId(branchid),
+        attendanceDate: today,
+        status: "IN",
+      })
+      .sort({ checkIn: -1 });
+
+    if (!attendance) {
+      return res.status(200).json({
+        status: "info",
+        message: "No active check-in found for today",
+      });
+    }
+
+    const now = new Date();
+
+    // ⏱️ Calculate duration in minutes
+    const durationMinutes = Math.floor(
+      (now - new Date(attendance.checkIn)) / (1000 * 60),
+    );
+
+    // 📝 Update record
+    attendance.checkOut = now;
+    attendance.durationMinutes = durationMinutes;
+    attendance.status = "OUT";
+
+    await attendance.save();
+
+    return res.status(200).json({
+      status: "ok",
+      message: "Check-out successful",
+      data: {
+        checkIn: attendance.checkIn,
+        checkOut: attendance.checkOut,
+        durationMinutes,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: "error",
+      message: "Check-out failed",
+    });
+  }
+});
+
+export default router;
