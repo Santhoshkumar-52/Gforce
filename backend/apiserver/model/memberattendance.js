@@ -87,19 +87,25 @@ attendanceSchema.pre("save", async function () {
   }
 });
 
-// 🔹 PRE-UPDATE HOOK (for findOneAndUpdate)
 attendanceSchema.pre("findOneAndUpdate", async function () {
   const update = this.getUpdate();
-
   const data = update.$set || update;
 
+  // Get existing document
+  const existing = await this.model.findOne(this.getQuery());
+
+  const checkIn = data.checkIn || existing?.checkIn;
+  const checkOut = data.checkOut;
+
+  // Set attendanceDate if checkIn updated
   if (data.checkIn) {
     const date = new Date(data.checkIn);
     data.attendanceDate = date.toISOString().split("T")[0];
   }
 
-  if (data.checkIn && data.checkOut) {
-    const diff = (data.checkOut - data.checkIn) / (1000 * 60);
+  // ✅ Calculate duration when checkout comes
+  if (checkIn && checkOut) {
+    const diff = (new Date(checkOut) - new Date(checkIn)) / (1000 * 60);
     data.durationMinutes = Math.max(0, Math.round(diff));
     data.status = "OUT";
   }

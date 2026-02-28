@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   FaHome,
-  FaTicketAlt,
+  FaUserShield,
   FaUsers,
   FaCog,
   FaSignOutAlt,
@@ -22,8 +22,9 @@ export default function Sidebar() {
     { name: "Dashboard", icon: <FaHome />, path: "/dashboard" },
     { name: "Sales", icon: <MdPointOfSale />, path: "/sales" },
     { name: "Members", icon: <FaUsers />, path: "/member" },
-    { name: "Reports", icon: <FaChartBar />, path: "/reports" },
-    { name: "Settings", icon: <FaCog />, path: "/settings" },
+    // { name: "Reports", icon: <FaChartBar />, path: "/reports" },
+    // { name: "Settings", icon: <FaCog />, path: "/settings" },
+    { name: "Admin", icon: <FaUserShield />, path: "/admin" },
     { name: "Attendance", icon: <FaUserCheck />, path: "/m_attendance" },
   ];
 
