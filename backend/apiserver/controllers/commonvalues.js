@@ -10,6 +10,7 @@ import gstmaster from "../model/gstmaster.js";
 import staffmaster from "../model/staffmaster.js";
 import discountmaster from "../model/discountmaster.js";
 import Branchmaster from "../model/branchmaster.js";
+import groupmaster from "../model/groupmaster.js";
 import mongoose from "mongoose";
 
 const DBSERVERURL = process.env.DBSERVERURL;
@@ -214,6 +215,25 @@ commonRouter.post("/getbranchdetails", async (req, res) => {
   res.status(200).json({
     status: "success",
     branchdata,
+  });
+});
+
+commonRouter.post("/getgroupids", async (req, res) => {
+  const { ObjectId } = mongoose.Types;
+  const result = await groupmaster.find({
+    activeStatus: true,
+    _id: {
+      $nin: [
+        new ObjectId("696400000000000000000001"),
+        new ObjectId("69a5b1d2e40ff7090dc9977e"),
+      ],
+    },
+  });
+  console.log("Fetched Group Ids");
+  const groupIds = converttoken(result);
+  res.status(200).json({
+    status: "success",
+    groupIds,
   });
 });
 

@@ -1,132 +1,61 @@
-import { Link } from "react-router-dom";
-import { FaChartBar } from "react-icons/fa";
-import "../styles/reports.css"; // colors only
+import "../styles/reports.css";
+import { useNavigate } from "react-router-dom";
+import reportsBg from "../assets/reports.png";
+import { FaDumbbell, FaChartLine, FaUserCheck, FaUsers } from "react-icons/fa";
+
+const reportModules = [
+  {
+    name: "Revenue Analytics",
+    icon: <FaChartLine size={26} />,
+    path: "/reports/sales",
+  },
+  {
+    name: "Attendance Insights",
+    icon: <FaUserCheck size={26} />,
+    path: "/reports/m_attendance",
+  },
+  {
+    name: "Trainer Performance",
+    icon: <FaDumbbell size={26} />,
+    path: "/reports/trainers",
+  },
+  {
+    name: "Membership Summary",
+    icon: <FaUsers size={26} />,
+    path: "/reports/memberships",
+  },
+];
 
 const Reports = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="p-6">
-      <h1
-        className="text-3xl font-medium"
-        style={{ color: "var(--text-color)" }}
-      >
-        Reports
-      </h1>
+    <div
+      className="bg-wrapper p-8"
+      style={{ backgroundImage: `url(${reportsBg})` }}
+    >
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white">Reports</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-light)" }}>
+          View and analyze system reports
+        </p>
+      </div>
 
-      <hr className="my-4" style={{ borderColor: "var(--border-color)" }} />
-
-      {/* Responsive grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Sale Report Card */}
-        <Link
-          to="/reports/salereport"
-          className="
-            flex flex-col items-center justify-center
-            p-8 rounded-xl shadow-md
-            hover:shadow-lg hover:-translate-y-1
-            transition-transform duration-300
-          "
-          style={{ background: "var(--card-bg)" }}
-        >
-          <FaChartBar
-            className="text-5xl"
-            style={{ color: "var(--icon-color)" }}
-          />
-
-          <p
-            className="text-lg font-semibold mt-3"
-            style={{ color: "var(--text-color)" }}
+      {/* Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        {reportModules.map((item, index) => (
+          <div
+            key={index}
+            onClick={() => navigate(item.path)}
+            className="admin-card cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center"
           >
-            Sale Report
-          </p>
-        </Link>
-        <Link
-          to="/reports/salereport"
-          className="
-            flex flex-col items-center justify-center
-            p-8 rounded-xl shadow-md
-            hover:shadow-lg hover:-translate-y-1
-            transition-transform duration-300
-          "
-          style={{ background: "var(--card-bg)" }}
-        >
-          <FaChartBar
-            className="text-5xl"
-            style={{ color: "var(--icon-color)" }}
-          />
-
-          <p
-            className="text-lg font-semibold mt-3"
-            style={{ color: "var(--text-color)" }}
-          >
-            Sale Report
-          </p>
-        </Link>
-        <Link
-          to="/reports/salereport"
-          className="
-            flex flex-col items-center justify-center
-            p-8 rounded-xl shadow-md
-            hover:shadow-lg hover:-translate-y-1
-            transition-transform duration-300
-          "
-          style={{ background: "var(--card-bg)" }}
-        >
-          <FaChartBar
-            className="text-5xl"
-            style={{ color: "var(--icon-color)" }}
-          />
-
-          <p
-            className="text-lg font-semibold mt-3"
-            style={{ color: "var(--text-color)" }}
-          >
-            Sale Report
-          </p>
-        </Link>
-        <Link
-          to="/reports/salereport"
-          className="
-            flex flex-col items-center justify-center
-            p-8 rounded-xl shadow-md
-            hover:shadow-lg hover:-translate-y-1
-            transition-transform duration-300
-          "
-          style={{ background: "var(--card-bg)" }}
-        >
-          <FaChartBar
-            className="text-5xl"
-            style={{ color: "var(--icon-color)" }}
-          />
-
-          <p
-            className="text-lg font-semibold mt-3"
-            style={{ color: "var(--text-color)" }}
-          >
-            Sale Report
-          </p>
-        </Link>
-        <Link
-          to="/reports/salereport"
-          className="
-            flex flex-col items-center justify-center
-            p-8 rounded-xl shadow-md
-            hover:shadow-lg hover:-translate-y-1
-            transition-transform duration-300
-          "
-          style={{ background: "var(--card-bg)" }}
-        >
-          <FaChartBar
-            className="text-5xl"
-            style={{ color: "var(--icon-color)" }}
-          />
-
-          <p
-            className="text-lg font-semibold mt-3"
-            style={{ color: "var(--text-color)" }}
-          >
-            Sale Report
-          </p>
-        </Link>
+            <div className="text-green-600">{item.icon}</div>
+            <p className="mt-3 text-sm font-semibold text-gray-800 text-center">
+              {item.name}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

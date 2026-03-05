@@ -10,7 +10,9 @@ import Sales from "./pages/Sales.jsx";
 import InvoiceBill from "./components/InvoiceBill.jsx";
 import Memberattendance from "./pages/Memberattendance.jsx";
 import Admin from "./pages/Admin.jsx";
-import Trainers from "./subpages/Trainer.jsx";
+import Trainers from "./subpages/admin/Trainer.jsx";
+import Reports from "./pages/Reports.jsx";
+import SaleReport from "./subpages/reports/SaleReport.jsx";
 
 const App = () => {
   return (
@@ -27,6 +29,8 @@ const App = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/trainers" element={<Trainers />} />
           <Route path="/m_attendance" element={<Memberattendance />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/sales" element={<SaleReport />} />
           <Route
             path="/sales/invoice/:saleUniqueId"
             element={<InvoiceBill />}
