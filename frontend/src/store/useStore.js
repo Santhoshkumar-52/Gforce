@@ -18,6 +18,7 @@ let getsavedstaffid = localStorage.getItem("staffid");
 let getsavedplanid = localStorage.getItem("planid");
 let getloggeduserbranch = localStorage.getItem("branchid");
 let getbranchdata = localStorage.getItem("branchdetails");
+let getgroupid = localStorage.getItem("groupIds");
 
 const useStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem("user")) || false,
@@ -28,6 +29,7 @@ const useStore = create((set, get) => ({
   gstvalues: (getsavedgstid && decodeIfExists(getsavedgstid)) || [],
   plans: (getsavedplanid && decodeIfExists(getsavedplanid)) || [],
   staffs: (getsavedstaffid && decodeIfExists(getsavedstaffid)) || [],
+  groupid: (getgroupid && decodeIfExists(getgroupid)) || [],
   priceformat: "₹",
   branchdata: (getbranchdata && decodeIfExists(getbranchdata)) || null,
 
@@ -159,6 +161,24 @@ const useStore = create((set, get) => ({
     } catch (err) {
       console.error("Error fetching branch details:", err);
       set({ branchdata: null });
+    }
+  },
+  getGroupIds: async () => {
+    try {
+      if (get().groupid?.length > 0) return;
+      const { branchid } = get();
+      const response = await axios.post(
+        `${baseUrl}/api/commonvalue/getgroupids`,
+      );
+      let data = response.data.groupIds;
+      localStorage.setItem("groupIds", data);
+      data = decodeIfExists(data);
+      set({
+        groupid: data,
+      });
+    } catch (err) {
+      console.error("Error fetching branch details:", err);
+      set({ groupid: [] });
     }
   },
 }));

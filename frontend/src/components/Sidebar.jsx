@@ -10,7 +10,7 @@ import {
   FaUserCheck,
 } from "react-icons/fa";
 
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { MdPointOfSale } from "react-icons/md";
 import "../styles/sidebar.css";
 import useAuthStore from "../store/useStore.js";
@@ -22,7 +22,7 @@ export default function Sidebar() {
     { name: "Dashboard", icon: <FaHome />, path: "/dashboard" },
     { name: "Sales", icon: <MdPointOfSale />, path: "/sales" },
     { name: "Members", icon: <FaUsers />, path: "/member" },
-    // { name: "Reports", icon: <FaChartBar />, path: "/reports" },
+    { name: "Reports", icon: <FaChartBar />, path: "/reports" },
     // { name: "Settings", icon: <FaCog />, path: "/settings" },
     { name: "Admin", icon: <FaUserShield />, path: "/admin" },
     { name: "Attendance", icon: <FaUserCheck />, path: "/m_attendance" },
@@ -65,7 +65,7 @@ export default function Sidebar() {
             to={item.path}
             className={({ isActive }) =>
               `flex items-center gap-3 p-3 rounded mx-2 my-1 ${
-                isActive ? "bg-[#2e2e2e]" : ""
+                isActive ? "bg-[#16a34a7e]" : ""
               }`
             }
             style={{ color: "var(--sidebar-text)" }}

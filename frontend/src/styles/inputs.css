@@ -1,0 +1,9 @@
+:root {
+  --input-bg: #ffffff;
+  --input-border: #e5e7eb;
+  --input-border-hover: #d1d5db;
+  --input-border-focus: #9ca3af;
+  --input-text: #111827;
+  --input-label: #cbd6e6;
+  --input-icon: #6b7280;
+}
