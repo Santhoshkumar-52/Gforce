@@ -13,8 +13,8 @@ const Clientdropdown = ({ onChangeClient }) => {
   }, []);
 
   const handleChange = (event, selectedOption) => {
-    if (selectedOption && onChangeClient) {
-      onChangeClient(selectedOption._id);
+    if (onChangeClient) {
+      onChangeClient(selectedOption ? selectedOption._id : "");
     }
   };
 

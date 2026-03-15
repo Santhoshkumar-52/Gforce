@@ -42,6 +42,11 @@ const attendanceSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    autoEndedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "staffmaster",
+      default: null,
+    },
 
     attendanceDate: {
       type: String, // YYYY-MM-DD

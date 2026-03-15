@@ -13,6 +13,7 @@ import Admin from "./pages/Admin.jsx";
 import Trainers from "./subpages/admin/Trainer.jsx";
 import Reports from "./pages/Reports.jsx";
 import SaleReport from "./subpages/reports/SaleReport.jsx";
+import AttendanceReport from "./subpages/reports/AttendanceReport.jsx";
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="/m_attendance" element={<Memberattendance />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/sales" element={<SaleReport />} />
+          <Route path="/reports/m_attendance" element={<AttendanceReport />} />
           <Route
             path="/sales/invoice/:saleUniqueId"
             element={<InvoiceBill />}

@@ -19,7 +19,7 @@ const branchSchema = new mongoose.Schema({
     enum: ["Owned", "Rented", "Leased"],
     default: "Owned",
   },
-  branchImage: String,
+  branchlogo: String,
 
   activeStatus: {
     type: Boolean,

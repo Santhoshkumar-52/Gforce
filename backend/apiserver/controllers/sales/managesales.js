@@ -9,8 +9,6 @@ import memberplan from "../../model/memberplan.js";
 dotenv.config();
 
 const salerouter = express.Router();
-const DBSERVERURL = process.env.DBSERVERURL;
-
 salerouter.post("/addsale", async (req, res) => {
   const session = await mongoose.startSession();
   const { sales, summary, payment, branchid, staffid } = req.body;
@@ -102,8 +100,6 @@ salerouter.post("/addsale", async (req, res) => {
     });
   }
 
-  /* ---------------- TEMP RESPONSE ---------------- */
-
   try {
     session.startTransaction();
 
@@ -141,6 +137,7 @@ salerouter.post("/addsale", async (req, res) => {
       message: "Transaction failed, nothing saved",
     });
   }
+  /* ---------------- TEMP RESPONSE ---------------- */
 });
 salerouter.get("/getsaledetail/:saleUniqueId", async (req, res) => {
   const saleUniqueId = req.params.saleUniqueId;
@@ -250,7 +247,7 @@ salerouter.get("/getsaledetail/:saleUniqueId", async (req, res) => {
           address: "$bcm.address",
           mobile: "$bcm.mobile",
           GSTNo: "$bcm.GSTNo",
-          branchImage: "$bcm.branchImage",
+          branchlogo: "$bcm.branchlogo",
 
           _id: 0,
         },
