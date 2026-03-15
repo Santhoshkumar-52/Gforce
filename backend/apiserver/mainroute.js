@@ -10,6 +10,8 @@ import salerouter from "./controllers/sales/managesales.js";
 import dashboardRouter from "./controllers/dashboard/dashboardController.js";
 import attedanceRouter from "./controllers/attendance/memberAttedanceContr.js";
 import staffRouter from "./controllers/staff/staffController.js";
+import salerepRouter from "./controllers/reports/salereport.js";
+import attRepRouter from "./controllers/reports/attendanceReport.js";
 
 /* =========================
    ROUTE BINDINGS
@@ -21,6 +23,10 @@ router.use("/sales", salerouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/attendance", attedanceRouter);
 router.use("/staff", staffRouter);
+
+// reports
+router.use("/reports/salereport", salerepRouter);
+router.use("/reports/attendance", attRepRouter);
 
 /* =========================
    FALLBACK (OPTIONAL)

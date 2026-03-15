@@ -42,3 +42,66 @@
 .status-unpaid {
   background-color: #dc2626;
 }
+
+@media print {
+
+  /* Reset everything */
+  * {
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Main invoice container */
+  .max-w-5xl {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Header — solid color only */
+  .invoice-header {
+    background-color: #1e40af !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* REMOVE watermark / overlay logo */
+  img.absolute {
+    display: none !important;
+  }
+
+  /* Remove glass / gradient / fancy cards */
+  .section-box,
+  .amount-box {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* Remove Tailwind gradient utilities if used */
+  [class*="bg-gradient"] {
+    background: none !important;
+  }
+
+  /* Avoid page breaks mid sections */
+  .section-box,
+  .amount-box,
+  .invoice-header {
+    break-inside: avoid;
+  }
+
+}
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -51,7 +51,7 @@ export default function InvoiceBill() {
           isActive: data.isActive,
           isExpired: data.isExpired,
           cancelled: data.cancelled,
-          branchImage: data.branchImage,
+          branchlogo: data.branchlogo,
           address: data.address,
           mobile: data.mobile,
           GSTNo: data.GSTNo,
@@ -90,14 +90,14 @@ export default function InvoiceBill() {
     .map(([key, value]) => `${key.toUpperCase()} : ${formatCurrency(value)}`);
 
   return (
-    <div className="bg-gray-100 p-4 md:p-8">
+    <div className="bg-gray-100 p-4 md:p-4">
       <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="invoice-header text-white p-3 md:p-8 flex flex-col md:flex-row justify-between gap-4">
-          <div className="p-0.5 bg-white shadow-2xl rounded logo-box w-full md:w-40 h-20 flex items-center justify-center overflow-hidden">
+        <div className="invoice-header text-white p-3 md:p-8 flex flex-col md:flex-row justify-between gap-4 shadow-lg">
+          <div className="p-0.5 rounded logo-box w-full md:w-40 h-20 flex items-center justify-center overflow-hidden">
             <img
               src={
-                saleData.branchImage ||
+                saleData.branchlogo ||
                 "../../src/assets/Gforce_placeholder.webp"
               }
               alt="Branch Logo"
@@ -105,7 +105,9 @@ export default function InvoiceBill() {
             />
           </div>
           <div className="branch_details">
-            <h1 className="text-2xl font-bold">{saleData.branchname}</h1>
+            <h1 className="text-2xl font-bold md:text-center">
+              {saleData.branchname}
+            </h1>
             <div className="flex flex-col h-13 justify-between md:text-center">
               <small>{saleData.address}</small>
               <small>
@@ -130,18 +132,18 @@ export default function InvoiceBill() {
           </div>
         </div>
 
-        <div className="p-6 md:p-8 space-y-8 relative">
+        <div className="p-6 md:p-8 space-y-1 relative">
           <img
             src={
-              saleData.branchImage || "../../src/assets/Gforce_placeholder.webp"
+              saleData.branchlogo || "../../src/assets/gforce_icon.png"
             }
             alt="Branch Logo"
             className="w-full h-full object-contain absolute opacity-4 top-0 bottom-0 left-0 right-0 m-auto pointer-events-none"
           />
           {/* Details Grid */}
-          <h1 className="font-bold text-center opacity-40">
+          <h6 className="font-bold text-center opacity-40 text-sm">
             -- TAX INVOICE --
-          </h1>
+          </h6>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="section-box">
               <h3 className="section-title">Bill To</h3>
