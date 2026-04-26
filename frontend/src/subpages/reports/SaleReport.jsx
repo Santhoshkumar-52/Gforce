@@ -16,7 +16,7 @@ const SaleReport = () => {
 
   // State to hold selected branch and duration
   const [filters, setFilters] = useState({
-    branchid: "",
+    branchid: branchid,
     startdate: new Date().toISOString().split("T")[0],
     enddate: new Date().toISOString().split("T")[0],
   });

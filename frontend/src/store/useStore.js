@@ -21,6 +21,7 @@ let getbranchdata = localStorage.getItem("branchdetails");
 let getgroupid = localStorage.getItem("groupIds");
 
 const useStore = create((set, get) => ({
+  token: localStorage.getItem("token") || null,
   user: JSON.parse(localStorage.getItem("user")) || false,
   branchid: getloggeduserbranch || "",
   baseUrl: baseUrl,
@@ -40,6 +41,10 @@ const useStore = create((set, get) => ({
         user: userData,
         branchid: userData.staff.branchId,
       }));
+  },
+  setToken: (token) => {
+    localStorage.setItem("token", token);
+    set({ token });
   },
   logout: () => {
     localStorage.clear();

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import CommonValueContext from "../layouts/CommonvalueContext";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
@@ -6,15 +6,27 @@ import Box from "@mui/material/Box";
 import "../styles/inputs.css";
 
 const Clientdropdown = ({ onChangeClient }) => {
-  const { branchids, setclientids } = useContext(CommonValueContext);
+  const { branchids, setclientids, branchid } = useContext(CommonValueContext);
 
+  const [selectedBranch, setSelectedBranch] = useState(null);
+
+  // Load branches on mount
   useEffect(() => {
     setclientids();
   }, []);
 
-  const handleChange = (event, selectedOption) => {
+  // Update selectedBranch when branchids or branchid changes
+  useEffect(() => {
+    if (!branchids?.length) return;
+
+    const found = branchids.find((b) => b._id === branchid) || branchids[0];
+    setSelectedBranch(found);
+  }, [branchids, branchid]);
+
+  const handleChange = (event, newValue) => {
+    setSelectedBranch(newValue);
     if (onChangeClient) {
-      onChangeClient(selectedOption ? selectedOption._id : "");
+      onChangeClient(newValue ? newValue._id : "");
     }
   };
 
@@ -31,7 +43,8 @@ const Clientdropdown = ({ onChangeClient }) => {
       </label>
 
       <Autocomplete
-        options={branchids}
+        options={branchids || []}
+        value={selectedBranch}
         getOptionLabel={(option) => option.branchname || ""}
         onChange={handleChange}
         isOptionEqualToValue={(option, value) => option._id === value._id}
@@ -41,27 +54,24 @@ const Clientdropdown = ({ onChangeClient }) => {
             backgroundColor: "var(--input-bg)",
             borderRadius: "6px",
             fontSize: "14px",
-            "& fieldset": {
-              borderColor: "var(--input-border)",
-            },
-            "&:hover fieldset": {
-              borderColor: "var(--input-border-hover)",
-            },
+            "& fieldset": { borderColor: "var(--input-border)" },
+            "&:hover fieldset": { borderColor: "var(--input-border-hover)" },
             "&.Mui-focused fieldset": {
               borderColor: "var(--input-border-focus)",
             },
           },
-          "& .MuiSvgIcon-root": {
-            color: "var(--input-icon)",
-          },
+          "& .MuiSvgIcon-root": { color: "var(--input-icon)" },
         }}
-        paperprops={{
-          sx: {
-            backgroundColor: "var(--input-bg)",
-            color: "var(--input-text)",
-            fontSize: "14px",
-          },
-        }}
+        PaperComponent={(props) => (
+          <Box
+            {...props}
+            sx={{
+              backgroundColor: "var(--input-bg)",
+              color: "var(--input-text)",
+              fontSize: "14px",
+            }}
+          />
+        )}
         renderInput={(params) => (
           <TextField {...params} placeholder="Select Branch" size="small" />
         )}
