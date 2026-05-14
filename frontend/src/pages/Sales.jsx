@@ -1,56 +1,104 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { MaterialReactTable } from "material-react-table";
-import Modal from "@mui/material/Modal";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import { MdDelete, MdAdd } from "react-icons/md";
+import { Autocomplete, TextField } from "@mui/material";
+import { MdDelete, MdAdd, MdShoppingCart } from "react-icons/md";
 import Swal from "sweetalert2";
 import "../styles/sales.css";
 import useStore from "../store/useStore.js";
+import salesBg from "../assets/sales.png";
 import {
   calculateGST,
   calculateDiscount,
 } from "../store/calculationFunctions.js";
 import axios from "axios";
 import SaleSummaryModal from "../pageUIBlocks/SaleSummary.jsx";
-import { duration } from "@mui/material";
+
+// ── Shared MUI styles ────────────────────────────────────────────────────────
+const sx = {
+  "& .MuiOutlinedInput-root": {
+    backgroundColor: "var(--input-bg)",
+    borderRadius: "6px",
+    fontSize: "14px",
+    "& fieldset": { borderColor: "var(--input-border)" },
+    "&:hover fieldset": { borderColor: "var(--input-border-hover)" },
+    "&.Mui-focused fieldset": { borderColor: "var(--input-border-focus)" },
+  },
+  "& .MuiSvgIcon-root": { color: "var(--input-icon)" },
+};
+
+const labelStyle = {
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "var(--input-label)",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  marginBottom: "5px",
+  display: "block",
+};
+
+const cardTitleStyle = {
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "var(--important)",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  marginBottom: 14,
+};
+// ────────────────────────────────────────────────────────────────────────────
+
+function recalcTotals(updated) {
+  if (updated.discount && updated.discount !== "0") {
+    updated.discountfinalamt = calculateDiscount(
+      updated.baseamount,
+      updated.discountamt || 0,
+      updated.discount,
+    );
+  } else {
+    updated.discountfinalamt = 0;
+  }
+  updated.totalamount =
+    updated.baseamount +
+    (Number(updated.gstpercent) || 0) -
+    updated.discountfinalamt;
+  return updated;
+}
+
+function generateBillNo() {
+  return "SI/" + Math.floor(10000 + Math.random() * 90000);
+}
 
 const Sales = () => {
-  // Generate a random sale ID for the bill
-  const saleid = useMemo(() => Math.floor(10000 + Math.random() * 90000), []);
-
-  // Modal open/close state
   const [open, changeOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // Default form values
-  const defaultvalues = useMemo(
+  const makeDefault = useCallback(
     () => ({
       memberid: "",
       saledate: new Date().toISOString().split("T")[0],
-      billno: "SI/" + saleid,
+      billno: generateBillNo(),
       duration: 0,
       mobile: "",
       plan: "",
       planname: "",
       staff: "",
       staffname: "",
-      discount: "",
+      discount: "0",
       discountamt: "",
       discountfinalamt: 0,
-      gst: "0",
+      gst: 0,
       gstid: "0",
-      gstpercent: "",
+      gstpercent: 0,
       startDate: new Date().toISOString().split("T")[0],
       expiryDate: new Date().toISOString().split("T")[0],
       totalamount: 0,
       baseamount: 0,
       creadtedby: user?.staff?.staffid || 1,
     }),
-    [saleid],
+    [],
   );
 
-  // Zustand store
   const {
     priceformat,
     setdicountids,
@@ -65,14 +113,11 @@ const Sales = () => {
     branchid,
   } = useStore();
 
-  const [form, setForm] = useState(defaultvalues);
+  const [form, setForm] = useState(makeDefault);
   const [members, setMembers] = useState([]);
-
-  // Table data
   const [table, setTable] = useState([]);
-  // Initialize store data on mount
+
   useEffect(() => {
-    form;
     setdicountids();
     setgstids();
     setplanids();
@@ -85,144 +130,124 @@ const Sales = () => {
         const res = await axios.post(`${baseUrl}/api/member/getmembers`, {
           clientid: branchid,
         });
-
-        // assuming API returns array
         setMembers(res.data.records || []);
-        // console.log(res.data.records);
       } catch (err) {
         console.error("Failed to load members", err);
       }
     };
-
     fetchMembers();
   }, []);
 
-  // Form state
+  const calculateExpiry = (startDate, duration) => {
+    if (!startDate || !duration) return "";
+    const date = new Date(startDate);
+    date.setMonth(date.getMonth() + Number(duration));
+    return date.toISOString().split("T")[0];
+  };
 
-  // Compute if discount input should be shown (optimized with useMemo)
-  const discountoption = useMemo(
-    () => form.discount !== "0" && form.discount !== "",
-    [form.discount],
+  const applyChange = useCallback((name, value, extra = {}) => {
+    setForm((prev) => recalcTotals({ ...prev, [name]: value, ...extra }));
+  }, []);
+
+  const handleSale = useCallback((e) => {
+    const { name, value } = e.target;
+    setForm((prev) => {
+      let updated = { ...prev, [name]: value };
+      if (name === "startDate" && prev.duration) {
+        updated.expiryDate = calculateExpiry(value, prev.duration);
+      }
+      return recalcTotals(updated);
+    });
+  }, []);
+
+  // ── Options ───────────────────────────────────────────────────────────────
+  const memberOptions = useMemo(
+    () =>
+      members.map((m) => ({
+        label: `${m.customerId} - ${m.mobile} - ${m.firstname}`,
+        value: m._id,
+      })),
+    [members],
   );
 
-  // -------------------------
-  // handleSale: updates form state and calculates GST/Discount/Total
-  // -------------------------
-  const handleSale = useCallback(
-    (e) => {
-      const { name, value } = e.target;
-
-      setForm((prev) => {
-        let updated = { ...prev, [name]: value };
-
-        // PLAN selection
-        if (name === "plan") {
-          const selectedOption = e.target.options[e.target.selectedIndex];
-          const duration = Number(selectedOption.dataset.duration_months);
-          const price =
-            value === "0" ? 0 : Number(selectedOption.dataset.price);
-
-          updated.duration = duration;
-          updated.baseamount = price;
-          updated.planname = value === "0" ? "Unknown" : selectedOption.text;
-
-          if (form.startDate) {
-            updated.expiryDate = calculateExpiry(form.startDate, duration);
-          }
-        }
-        if (name === "startDate") {
-          updated.startDate = value;
-
-          if (form.duration) {
-            updated.expiryDate = calculateExpiry(value, form.duration);
-          }
-        }
-        // STAFF selection
-        if (name === "staff") {
-          const selectedOption = e.target.options[e.target.selectedIndex];
-          updated.staffname = value === "" ? "Unknown" : selectedOption.text;
-        }
-
-        // GST calculation
-        if (name === "gstpercent" && updated.baseamount !== 0) {
-          if (value === "0") {
-            updated.gstpercent = 0; // amount
-            updated.gst = 0; // percentage
-            updated.gstid = "0"; // selected ID
-          } else {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            const gstValue = Number(selectedOption.dataset.price);
-            const gstAmount = calculateGST(updated.baseamount, gstValue);
-            updated.gstpercent = gstAmount; // actual amount
-            updated.gst = gstValue; // percentage
-            updated.gstid = value; // selected option ID
-          }
-        }
-
-        // Discount input toggle handled by discountoption (no separate state now)
-
-        // Discount amount calculation
-        if (updated.discount && updated.discount !== "0") {
-          updated.discountfinalamt = calculateDiscount(
-            updated.baseamount,
-            updated.discountamt || 0,
-            updated.discount,
-          );
-        } else {
-          updated.discountfinalamt = 0;
-        }
-
-        // Total amount calculation
-        updated.totalamount =
-          updated.baseamount + updated.gstpercent - updated.discountfinalamt;
-
-        return updated;
-      });
-    },
-    [form],
+  const planOptions = useMemo(
+    () =>
+      plans.map((p) => ({
+        label: p.plan_name,
+        value: p._id,
+        price: p.price,
+        duration_months: p.duration_months,
+      })),
+    [plans],
   );
 
-  // -------------------------
-  // addRecord: validates and adds a record to table
-  // -------------------------
+  const staffOptions = useMemo(
+    () => staffs.map((s) => ({ label: s.fullName, value: s._id })),
+    [staffs],
+  );
+
+  const gstOptions = useMemo(
+    () => [
+      { label: "No GST", value: "0", price: 0 },
+      ...gstvalues.map((g) => ({
+        label: g.gstname,
+        value: g._id,
+        price: g.value,
+      })),
+    ],
+    [gstvalues],
+  );
+
+  const discountOptions = useMemo(
+    () => [
+      { label: "None", value: "0" },
+      ...discountids.map((d) => ({ label: d.discountname, value: d._id })),
+    ],
+    [discountids],
+  );
+
+  const selectedMember =
+    memberOptions.find((o) => o.value === form.memberid) || null;
+  const selectedPlan = planOptions.find((o) => o.value === form.plan) || null;
+  const selectedStaff =
+    staffOptions.find((o) => o.value === form.staff) || null;
+  const selectedGst =
+    gstOptions.find((o) => o.value === form.gstid) || gstOptions[0];
+  const selectedDiscount =
+    discountOptions.find((o) => o.value === form.discount) ||
+    discountOptions[0];
+  const discountoption = form.discount !== "0" && form.discount !== "";
+
+  // ── addRecord ─────────────────────────────────────────────────────────────
   const addRecord = useCallback(() => {
-    // Validation
-    if (form.totalamount < 0) {
+    if (form.totalamount < 0)
       return Swal.fire({
         title: "Wait",
-        text: "Invalid total amount, check the amount again",
+        text: "Invalid total amount",
         icon: "warning",
         confirmButtonColor: "var(--important)",
       });
-    }
-    if (!form.startDate || !form.expiryDate) {
+    if (!form.startDate || !form.expiryDate)
       return Swal.fire({
         title: "Wait",
-        text: "Start And Expiry Date Needed",
+        text: "Start & Expiry Date needed",
         icon: "warning",
         confirmButtonColor: "var(--important)",
       });
-    }
-    if (!form.plan || !form.staff || form.totalamount < 0) {
-      Swal.fire({
-        title: "Missing Required Fields",
-        text: "Plan, Staff & Price are required!",
+    if (!form.plan || !form.staff)
+      return Swal.fire({
+        title: "Missing Fields",
+        text: "Plan & Staff are required!",
         icon: "warning",
         confirmButtonColor: "var(--important)",
       });
-      return;
-    }
+    if (discountoption && form.discountamt === "")
+      return Swal.fire({
+        text: "Enter discount amount",
+        icon: "warning",
+        confirmButtonColor: "var(--important)",
+      });
 
-    if (form.discount && form.discount !== "0" && form.discountamt === "") {
-      Swal.fire({
-        text: "Invalid Discount Number",
-        icon: "warning",
-        confirmButtonColor: "var(--important)",
-      });
-      return;
-    }
-
-    // Create new record
     const newRecord = {
       duration: form.duration,
       startDate: form.startDate,
@@ -244,309 +269,481 @@ const Sales = () => {
     };
 
     setTable((prev) => [...prev, newRecord]);
-    setForm(defaultvalues);
-  }, [form]);
+    setForm((prev) => ({
+      ...makeDefault(),
+      memberid: prev.memberid,
+      saledate: prev.saledate,
+      billno: prev.billno,
+      startDate: prev.startDate,
+    }));
+  }, [form, discountoption, makeDefault]);
 
-  const calculateExpiry = (startDate, duration) => {
-    if (!startDate || !duration) return "";
-
-    const date = new Date(startDate);
-    date.setMonth(date.getMonth() + Number(duration));
-
-    // Format back to YYYY-MM-DD for input type="date"
-    return date.toISOString().split("T")[0];
-  };
-
-  // -------------------------
-  // deleteRecord: removes record from table
-  // -------------------------
   const deleteRecord = useCallback((id) => {
     setTable((prev) => prev.filter((r) => r.id !== id));
-
     Swal.fire({
       title: "Deleted!",
-      text: "Record removed successfully",
+      text: "Record removed",
       icon: "success",
-      timer: 1200,
+      timer: 1000,
       showConfirmButton: false,
     });
-
-    console.log(id, "Removed from Cart");
   }, []);
 
-  // -------------------------
-  // Table columns (optimized with useMemo)
-  // -------------------------
+  const handleSaleComplete = useCallback(() => {
+    setTable([]);
+    setForm(makeDefault());
+    changeOpen(false);
+  }, [makeDefault]);
+
+  // ── Table columns ─────────────────────────────────────────────────────────
   const columns = useMemo(
     () => [
       { accessorKey: "planname", header: "Plan" },
-      { accessorKey: "staffname", header: "Alloted Staff" },
-      { accessorKey: "baseprice", header: `Base Price (${priceformat})` },
-      { accessorKey: "discount", header: "Discount" },
+      { accessorKey: "staffname", header: "Staff" },
       {
-        header: "GST (%)",
-        Cell: ({ row }) => (
-          <>
-            {row.original.gst}% <br />
-            <span className="text-gray-500 text-xs">
-              {priceformat} {row.original.gstamount.toFixed(2)}
+        header: `Base (${priceformat})`,
+        Cell: ({ row }) => `${priceformat} ${row.original.baseprice}`,
+      },
+      {
+        header: "Discount",
+        Cell: ({ row }) =>
+          row.original.discount > 0 ? (
+            <span className="text-green-600">
+              - {priceformat}
+              {row.original.discount}
             </span>
-          </>
+          ) : (
+            <span className="text-gray-400">—</span>
+          ),
+      },
+      {
+        header: "GST",
+        Cell: ({ row }) => (
+          <span>
+            {row.original.gst}%{" "}
+            <span className="text-xs text-gray-500">
+              ({priceformat}
+              {row.original.gstamount.toFixed(2)})
+            </span>
+          </span>
         ),
       },
-      { accessorKey: "total", header: "Total Amount" },
       {
+        header: "Validity",
+        Cell: ({ row }) => (
+          <span className="text-xs text-gray-600">
+            {row.original.startDate} → {row.original.expiryDate}
+          </span>
+        ),
+      },
+      {
+        header: "Total",
+        Cell: ({ row }) => (
+          <span className="font-semibold" style={{ color: "var(--important)" }}>
+            {priceformat} {row.original.total}
+          </span>
+        ),
+      },
+      {
+        header: "",
         accessorKey: "actions",
-        header: "Delete",
         Cell: ({ row }) => (
           <button
             onClick={() => deleteRecord(row.original.id)}
-            className="text-red-500 text-xl"
+            className="text-red-400 hover:text-red-600 text-xl transition-colors"
           >
             <MdDelete />
           </button>
         ),
       },
     ],
-    [deleteRecord],
+    [deleteRecord, priceformat],
   );
 
-  // -------------------------
-  // JSX Render
-  // -------------------------
+  // ── Footer rendered via portal — escapes any parent transform/overflow ────
+  const footer = createPortal(
+    <div
+      style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 10,
+        background: "var(--footerbg)",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.18)",
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        gap: 20,
+        padding: "10px 24px",
+      }}
+    >
+      <span
+        style={{ fontSize: 14, fontWeight: 500, color: "var(--footertext)" }}
+      >
+        Plans: <strong>{table.length}</strong>
+      </span>
+      <span
+        style={{ fontSize: 14, fontWeight: 500, color: "var(--footertext)" }}
+      >
+        Grand Total:{" "}
+        <strong style={{ fontSize: 17 }}>
+          {priceformat}
+          {table.reduce((acc, d) => acc + d.total, 0)}
+        </strong>
+      </span>
+      <button
+        onClick={() => changeOpen(true)}
+        disabled={table.length === 0}
+        style={{
+          padding: "9px 26px",
+          borderRadius: 8,
+          fontWeight: 700,
+          fontSize: 14,
+          border: "none",
+          cursor: table.length === 0 ? "not-allowed" : "pointer",
+          background: table.length === 0 ? "#9ca3af" : "var(--cancel-color)",
+          color: "#fff",
+          transition: "opacity 0.15s",
+        }}
+      >
+        Proceed to Payment →
+      </button>
+    </div>,
+    document.body,
+  );
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 pb-24">
-      <h1 className="text-3xl font-medium text-gray-800">Sales</h1>
-      <hr />
-
-      {/* SALE DATE & BILL NO */}
-      <div className="flex mt-5">
-        <div className="mr-4 text-sm">
-          <label className="mb-1">Sale Date:</label>
-          <input
-            type="date"
-            name="saledate"
-            value={form.saledate}
-            onChange={handleSale}
-            className="rounded-lg p-2 bg-transparent text-[var(--important)] font-bold outline-none"
-          />
+    <div
+      className="p-4 md:p-6 pb-20 bg-wrapper"
+      style={{ backgroundImage: `url(${salesBg})` }}
+    >
+      {/* PAGE HEADER */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white">Sales</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-light)" }}>
+            Create and manage sales transactions{" "}
+          </p>
         </div>
+        <span className="text-sm text-white font-bold rounded-xl p-4 bg-[var(--important)]">
+          Bill:{" "}
+          <strong>{form.billno}</strong>
+        </span>
+      </div>
+      <hr className="mb-4" />
 
-        <div className="text-sm">
-          <label className="mb-1">Bill No:</label>
-          <input
-            readOnly
-            type="text"
-            name="billno"
-            value={form.billno}
-            className="rounded-lg p-2 bg-transparent outline-none text-[var(--important)] font-bold"
-          />
+      {/* ── CARD 1: Bill Info ─────────────────────────────────────── */}
+      <div style={{ marginBottom: 14 }}>
+        <p style={cardTitleStyle}>Bill Info</p>
+        <div className="flex flex-wrap gap-4 items-end">
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Sale Date</label>
+            <TextField
+              type="date"
+              size="small"
+              name="saledate"
+              value={form.saledate}
+              onChange={handleSale}
+              sx={{ width: 160, ...sx }}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minWidth: 240,
+            }}
+          >
+            <label style={labelStyle}>Member</label>
+            <Autocomplete
+              options={memberOptions}
+              value={selectedMember}
+              getOptionLabel={(o) => o.label}
+              isOptionEqualToValue={(o, v) => o.value === v.value}
+              onChange={(_, v) => applyChange("memberid", v ? v.value : "")}
+              sx={{ ...sx }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  size="small"
+                  placeholder="Search by ID, mobile or name…"
+                />
+              )}
+            />
+          </Box>
         </div>
       </div>
 
-      {/* FORM GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-1 mt-4">
-        {/* PLAN */}
-        <div className="flex flex-col text-sm md:mx-1">
-          <label className="mb-1">Member *</label>
+      {/* ── CARD 2: Plan Details ──────────────────────────────────── */}
+      <div style={{ marginBottom: 14 }}>
+        <p style={cardTitleStyle}>Plan Details</p>
 
-          <select
-            name="memberid"
-            value={form.memberid}
-            onChange={handleSale}
-            className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
-          >
-            <option value="">Select Member</option>
-
-            {Array.isArray(members) &&
-              members.map((member) => (
-                <option key={member._id} value={member._id}>
-                  {member.customerId} - {member.mobile} - {member.firstname}
-                </option>
-              ))}
-          </select>
-        </div>
-        <div className="flex flex-col text-sm md:mx-1">
-          <label className="mb-1">Plan *</label>
-          <select
-            name="plan"
-            value={form.plan}
-            onChange={handleSale}
-            className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
-          >
-            <option value="0">Select</option>
-            {plans.map((plan, index) => (
-              <option
-                key={index}
-                value={plan._id}
-                data-price={plan.price}
-                data-duration_months={plan.duration_months}
-              >
-                {plan.plan_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* STAFF */}
-        <div className="flex flex-col text-sm md:mx-1">
-          <label className="mb-1">Staff *</label>
-          <select
-            name="staff"
-            value={form.staff}
-            onChange={handleSale}
-            className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
-          >
-            <option value="">Select</option>
-            {staffs.map((ids, index) => (
-              <option key={index} value={ids._id}>
-                {ids.fullName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* GST & Discount */}
-        <div className="flex flex-col md:flex-row text-sm md:mx-1 justify-start gap-3 w-max">
-          <section className="flex flex-col">
-            <label className="mb-1">GST %</label>
-            <select
-              name="gstpercent"
-              value={form.gstid}
-              onChange={handleSale}
-              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
-            >
-              <option value="0">0%</option>
-              {gstvalues.map((gst, index) => (
-                <option key={index} value={gst._id} data-price={gst.value}>
-                  {gst.gstname}
-                </option>
-              ))}
-            </select>
-          </section>
-
-          <section className="flex flex-col">
-            <label className="mb-1">Discount</label>
-            <select
-              name="discount"
-              value={form.discount}
-              onChange={handleSale}
-              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
-            >
-              <option value="0">None</option>
-              {discountids.map((ids, index) => (
-                <option key={index} value={ids._id}>
-                  {ids.discountname}
-                </option>
-              ))}
-            </select>
-          </section>
-
-          {discountoption && (
-            <section className="flex flex-col">
-              <label className="mb-1">
-                {form.discount === "6976d97a34585fb711fa6a29"
-                  ? "%"
-                  : "Flat (₹)"}
-              </label>
-              <input
-                placeholder="0.00"
-                type="text"
-                name="discountamt"
-                onChange={handleSale}
-                value={form.discountamt}
-                className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-20"
-              />
-            </section>
-          )}
-        </div>
-
-        {/* TOTAL AMOUNT */}
-        <div className="flex items-end text-sm md:mx-1">
-          <section className="flex flex-col">
-            <label className="mb-1">Price</label>
-            <input
-              readOnly
-              type="number"
-              name="totalamount"
-              value={Math.round(form.totalamount.toFixed(2))}
-              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-25"
+        {/* Row 1 — Plan, Staff, Dates */}
+        <div className="flex flex-wrap gap-4 items-end mb-4">
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Plan *</label>
+            <Autocomplete
+              options={planOptions}
+              value={selectedPlan}
+              getOptionLabel={(o) => o.label}
+              isOptionEqualToValue={(o, v) => o.value === v.value}
+              onChange={(_, newVal) => {
+                if (!newVal) return;
+                const duration = Number(newVal.duration_months);
+                const price = Number(newVal.price);
+                const expiryDate = calculateExpiry(form.startDate, duration);
+                applyChange("plan", newVal.value, {
+                  planname: newVal.label,
+                  duration,
+                  baseamount: price,
+                  expiryDate,
+                });
+              }}
+              sx={{ width: 210, ...sx }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  size="small"
+                  placeholder="Select plan…"
+                />
+              )}
             />
-          </section>
-          <section className="mx-auto">
-            <button
-              onClick={addRecord}
-              className="flex items-center gap-1 bg-[var(--important)] text-white px-4 py-2 rounded-lg"
-            >
-              <MdAdd className="text-xl" />
-            </button>
-          </section>
-        </div>
-        <div className="flex gap-2">
-          <div className="flex flex-col text-sm md:mx-1">
-            <label className="mb-1">Start Date:</label>
-            <input
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Assigned Staff *</label>
+            <Autocomplete
+              options={staffOptions}
+              value={selectedStaff}
+              getOptionLabel={(o) => o.label}
+              isOptionEqualToValue={(o, v) => o.value === v.value}
+              onChange={(_, v) =>
+                applyChange("staff", v ? v.value : "", {
+                  staffname: v ? v.label : "Unknown",
+                })
+              }
+              sx={{ width: 200, ...sx }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  size="small"
+                  placeholder="Select staff…"
+                />
+              )}
+            />
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Start Date</label>
+            <TextField
               type="date"
+              size="small"
               name="startDate"
               value={form.startDate}
               onChange={handleSale}
-              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
+              sx={{ width: 155, ...sx }}
             />
-          </div>
-          <div className="flex flex-col text-sm md:mx-1">
-            <label className="mb-1">End Date:</label>
-            <input
-              readOnly
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Expiry Date</label>
+            <TextField
               type="date"
+              size="small"
               name="expiryDate"
               value={form.expiryDate}
-              onChange={handleSale}
-              className="rounded-lg p-2 bg-transparent border border-gray-400 outline-none cursor-pointer w-full"
+              inputProps={{ readOnly: true }}
+              sx={{
+                width: 155,
+                ...sx,
+                "& .MuiOutlinedInput-root": {
+                  ...sx["& .MuiOutlinedInput-root"],
+                  fontWeight: 600,
+                  color: "var(--important)",
+                },
+              }}
             />
-          </div>
+          </Box>
         </div>
-      </div>
 
-      {/* TABLE */}
-      <div className="mt-6 overflow-x-auto">
-        <MaterialReactTable
-          columns={columns}
-          data={table}
-          enableSorting={false}
-          enableFilters={false}
-          enableFullScreenToggle={false}
-          enableColumnActions={false}
-          enableTopToolbar={false}
-          enableBottomToolbar={false}
-        />
-      </div>
-
-      {/* FOOTER BAR */}
-      <div className="fixed left-0 bottom-0 w-full bg-[var(--footerbg)] shadow-lg p-4 flex justify-evenly items-center z-1">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:w-100 text-lg lg:text-2xl">
-          <span className="font-medium text-[var(--footertext)]">
-            Total Plans: {table.length}
-          </span>
-          <span className="font-medium text-[var(--footertext)]">
-            Total: {priceformat}
-            {table.reduce((acc, data) => acc + data.total, 0)}
-          </span>
-        </div>
-        <button
-          onClick={() => changeOpen(true)}
-          disabled={table.length === 0}
-          className={`cursor-pointer px-6 py-2 rounded-lg text-white ${
-            table.length === 0
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-[var(--important)]"
-          }`}
+        {/* Row 2 — Pricing */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 16,
+            alignItems: "flex-end",
+            paddingTop: 14,
+            borderTop: "1px solid var(--input-border, #e5e7eb)",
+          }}
         >
-          Go to Payment
-        </button>
+          {/* GST */}
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>GST</label>
+            <Autocomplete
+              disableClearable
+              options={gstOptions}
+              value={selectedGst}
+              getOptionLabel={(o) => o.label}
+              isOptionEqualToValue={(o, v) => o.value === v.value}
+              onChange={(_, newVal) => {
+                if (!newVal) return;
+                setForm((prev) => {
+                  const updated = { ...prev };
+                  if (newVal.value === "0") {
+                    updated.gstpercent = 0;
+                    updated.gst = 0;
+                    updated.gstid = "0";
+                  } else {
+                    updated.gstpercent = calculateGST(
+                      prev.baseamount,
+                      newVal.price,
+                    );
+                    updated.gst = newVal.price;
+                    updated.gstid = newVal.value;
+                  }
+                  return recalcTotals(updated);
+                });
+              }}
+              sx={{ width: 130, ...sx }}
+              renderInput={(params) => <TextField {...params} size="small" />}
+            />
+          </Box>
+
+          {/* Discount Type */}
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Discount Type</label>
+            <Autocomplete
+              disableClearable
+              options={discountOptions}
+              value={selectedDiscount}
+              getOptionLabel={(o) => o.label}
+              isOptionEqualToValue={(o, v) => o.value === v.value}
+              onChange={(_, v) =>
+                applyChange("discount", v ? v.value : "0", {
+                  discountamt: "",
+                  discountfinalamt: 0,
+                })
+              }
+              sx={{ width: 160, ...sx }}
+              renderInput={(params) => <TextField {...params} size="small" />}
+            />
+          </Box>
+
+          {/* Discount Amount — own column, never overlaps Price */}
+          {discountoption && (
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
+              <label style={labelStyle}>
+                {form.discount === "6976d97a34585fb711fa6a29"
+                  ? "Disc %"
+                  : "Disc Amt (₹)"}
+              </label>
+              <TextField
+                size="small"
+                placeholder="0.00"
+                name="discountamt"
+                value={form.discountamt}
+                onChange={handleSale}
+                sx={{ width: 110, ...sx }}
+              />
+            </Box>
+          )}
+
+          {/* Separator */}
+          <div
+            style={{
+              width: 1,
+              height: 36,
+              background: "var(--input-border, #e5e7eb)",
+              alignSelf: "flex-end",
+              marginBottom: 2,
+            }}
+          />
+
+          {/* Total Price */}
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <label style={labelStyle}>Total Price</label>
+            <TextField
+              size="small"
+              type="number"
+              value={Math.round(form.totalamount)}
+              inputProps={{ readOnly: true }}
+              sx={{
+                width: 130,
+                ...sx,
+                "& .MuiOutlinedInput-root": {
+                  ...sx["& .MuiOutlinedInput-root"],
+                  fontWeight: 700,
+                  color: "var(--important)",
+                  background:
+                    "color-mix(in srgb, var(--important, #6366f1) 10%, white)",
+                },
+              }}
+            />
+          </Box>
+
+          {/* ADD button */}
+          <button
+            onClick={addRecord}
+            title="Add to cart"
+            style={{
+              height: 40,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "0 20px",
+              borderRadius: 8,
+              background: "var(--important)",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 14,
+              border: "none",
+              cursor: "pointer",
+              alignSelf: "flex-end",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <MdAdd style={{ fontSize: 20 }} />
+            Add to Cart
+          </button>
+        </div>
       </div>
 
-      {/* PAYMENT MODAL */}
-      <SaleSummaryModal open={open} changeOpen={changeOpen} table={table} />
+      {/* ── TABLE ────────────────────────────────────────────────── */}
+      {table.length > 0 ? (
+        <div className="mt-1 overflow-x-auto rounded-xl border border-gray-200">
+          <MaterialReactTable
+            columns={columns}
+            data={table}
+            enableSorting={false}
+            enableFilters={false}
+            enableFullScreenToggle={false}
+            enableColumnActions={false}
+            enableTopToolbar={false}
+            enableBottomToolbar={false}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-300 gap-2">
+          <MdShoppingCart style={{ fontSize: 52 }} />
+          <p className="text-sm">No plans added yet</p>
+        </div>
+      )}
+
+      {/* ── FOOTER via portal (bypasses parent transform/overflow) ── */}
+      {footer}
+
+      {/* ── PAYMENT MODAL ──────────────────────────────────────── */}
+      <SaleSummaryModal
+        open={open}
+        changeOpen={changeOpen}
+        table={table}
+        onSaleComplete={handleSaleComplete}
+      />
     </div>
   );
 };

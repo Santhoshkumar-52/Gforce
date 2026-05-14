@@ -1,19 +1,48 @@
-import { Modal, Box } from "@mui/material";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { Modal, Box, TextField } from "@mui/material";
+import { useContext, useMemo, useState } from "react";
 import CommonValueContext from "../layouts/CommonvalueContext.jsx";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-export default function SaleSummaryModal({ open, changeOpen, table }) {
+// Shared input style matching Sale.jsx
+const sx = {
+  "& .MuiOutlinedInput-root": {
+    backgroundColor: "var(--input-bg)",
+    borderRadius: "6px",
+    fontSize: "14px",
+    "& fieldset": { borderColor: "var(--input-border)" },
+    "&:hover fieldset": { borderColor: "var(--input-border-hover)" },
+    "&.Mui-focused fieldset": { borderColor: "var(--input-border-focus)" },
+  },
+};
+
+const labelStyle = {
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "var(--input-label)",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  marginBottom: "5px",
+  display: "block",
+};
+
+const PAYMENT_METHODS = [
+  { label: "Cash", name: "cash", colorVar: "--cash-color" },
+  { label: "Card", name: "card", colorVar: "--card-color" },
+  { label: "UPI", name: "upi", colorVar: "--upi-color" },
+];
+
+export default function SaleSummaryModal({
+  open,
+  changeOpen,
+  table,
+  onSaleComplete, // ← new: called after successful save to reset parent state
+}) {
   const { priceformat, baseUrl, user, branchid } =
     useContext(CommonValueContext);
   const staffid = user?.staff?._id;
 
-  const [payment, setPayment] = useState({
-    cash: 0,
-    card: 0,
-    upi: 0,
-  });
+  const [payment, setPayment] = useState({ cash: 0, card: 0, upi: 0 });
 
   const summary = useMemo(() => {
     return table.reduce(
@@ -40,17 +69,24 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setPayment((prev) => ({
-      ...prev,
-      [name]: Number(value) || 0,
-    }));
+    setPayment((prev) => ({ ...prev, [name]: Number(value) || 0 }));
+  };
+
+  // Click a payment method button → fill in the full balance with that method
+  const autoInsertAmt = (name) => {
+    setPayment({ cash: 0, card: 0, upi: 0, [name]: balanceAmount });
+  };
+
+  const handleClose = () => {
+    setPayment({ cash: 0, card: 0, upi: 0 });
+    changeOpen(false);
   };
 
   const handlePay = async () => {
     if (paidAmount < summary.totalAmount) {
       const result = await Swal.fire({
         title: "Partial Payment?",
-        text: "Paid amount is less than the bill total. Do you want to proceed with partial payment?",
+        text: "Paid amount is less than the bill total. Proceed with partial payment?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Yes, proceed",
@@ -58,30 +94,22 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
       });
-
-      if (!result.isConfirmed) {
-        // ❌ User clicked NO
-        return; // stop execution, cancel save
-      }
+      if (!result.isConfirmed) return;
     }
-    const payload = {
-      sales: table,
-      summary,
-      payment,
-      staffid,
-      branchid,
-    };
+
+    const payload = { sales: table, summary, payment, staffid, branchid };
 
     try {
       const res = await axios.post(`${baseUrl}/api/sales/addsale`, payload);
 
-      // assuming backend sends: { status: "success", message: "...", printUrl?: "..." }
       if (res.data?.status === "success") {
-        // open blank window (or image URL) and trigger print
+        // Open invoice in a new tab
         window.open(`/sales/invoice/${res.data.saleUniqueId}`, "_blank");
-        changeOpen(false);
+        // Reset payment state locally
+        setPayment({ cash: 0, card: 0, upi: 0 });
+        // Tell the parent to reset everything (table, form, billno)
+        onSaleComplete?.();
       } else {
-        // backend responded but status is not success
         Swal.fire({
           icon: "error",
           title: "Payment Failed",
@@ -89,7 +117,6 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
         });
       }
     } catch (error) {
-      // axios / network / server error
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -100,123 +127,245 @@ export default function SaleSummaryModal({ open, changeOpen, table }) {
       });
     }
   };
-  const autoInsertAmt = (e) => {
-    const { name } = e.target;
-    setPayment({
-      cash: 0,
-      card: 0,
-      upi: 0,
-      [name]: balanceAmount,
-    });
-  };
+
+  // ── Row component ─────────────────────────────────────────────────────────
+  const SummaryRow = ({ label, value, className = "" }) => (
+    <div className={`flex justify-between items-center py-1 ${className}`}>
+      <span className="text-gray-500 text-sm">{label}</span>
+      <span className="font-semibold text-sm">{value}</span>
+    </div>
+  );
 
   return (
-    <Modal open={open} onClose={() => changeOpen(false)}>
+    <Modal open={open} onClose={handleClose}>
       <Box
-        className="
-        absolute top-1/2 left-1/2 
-        -translate-x-1/2 -translate-y-1/2
-        w-[95%] md:w-[600px] lg:w-[780px]
-        rounded-xl bg-white shadow-2xl p-4 md:p-6
-      "
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: { xs: "95%", sm: 560, md: 700 },
+          bgcolor: "white",
+          borderRadius: 3,
+          boxShadow: 24,
+          overflow: "hidden",
+        }}
       >
-        <h2 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4 border-b pb-2">
-          Payment Summary
-        </h2>
-
-        {/* CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* SUMMARY */}
-          <div className="space-y-3 text-sm md:text-base lg:text-lg">
-            <div className="flex justify-between">
-              <span>Total Items</span>
-              <span className="font-semibold">{summary.totalItems}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Discount</span>
-              <span className="text-green-600">
-                {priceformat} {summary.totalDiscount}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>GST</span>
-              <span className="text-blue-600">
-                {priceformat} {summary.totalGST}
-              </span>
-            </div>
-
-            <div className="flex justify-between font-bold text-base md:text-lg lg:text-xl border-t pt-3">
-              <span>Total</span>
-              <span>
-                {priceformat} {summary.totalAmount}
-              </span>
-            </div>
-
-            <div className="flex justify-between font-semibold text-red-600">
-              <span>Balance</span>
-              <span>
-                {priceformat} {balanceAmount}
-              </span>
-            </div>
-          </div>
-
-          {/* PAYMENT MODE */}
-          <div className="space-y-4">
-            {[
-              { label: "Cash", name: "cash" },
-              { label: "Card", name: "card" },
-              { label: "UPI", name: "upi" },
-            ].map((item) => (
-              <div key={item.name} className="flex items-center gap-3">
-                <button
-                  name={item.name}
-                  onClick={autoInsertAmt}
-                  className="
-                  w-24 md:w-28 h-10 md:h-12
-                  text-white rounded-lg
-                  text-sm md:text-lg font-semibold
-                  cursor-pointer
-                "
-                  style={{
-                    backgroundColor: `var(--${item.name}-color)`,
-                  }}
-                >
-                  {item.label}
-                </button>
-
-                <input
-                  type="number"
-                  name={item.name}
-                  value={payment[item.name]}
-                  onChange={handleChange}
-                  className="
-                  flex-1 border rounded-lg px-3 py-2
-                  text-right text-sm md:text-lg
-                  outline-none
-                "
-                  placeholder="0.00"
-                />
-              </div>
-            ))}
-          </div>
+        {/* Header */}
+        <div
+          style={{
+            background: "var(--important)",
+            padding: "14px 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h2
+            style={{ color: "#fff", fontWeight: 700, fontSize: 18, margin: 0 }}
+          >
+            Payment Summary
+          </h2>
+          <button
+            onClick={handleClose}
+            style={{
+              color: "#fff",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 22,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
         </div>
 
-        {/* FOOTER */}
-        <div className="flex justify-end mt-6">
-          <button
-            className="
-            px-6 md:px-10 py-2 md:py-3
-            rounded-lg text-sm md:text-xl
-            text-white font-bold
-          "
-            style={{ backgroundColor: "var(--save-color)" }}
-            onClick={handlePay}
+        <div style={{ padding: "20px 24px" }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* ── LEFT: Summary ── */}
+            <div>
+              <p style={{ ...labelStyle, marginBottom: 10 }}>Bill Summary</p>
+              <div
+                style={{
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 8,
+                  padding: "12px 16px",
+                }}
+              >
+                <SummaryRow label="Total Plans" value={summary.totalItems} />
+                <SummaryRow
+                  label="Base Price"
+                  value={`${priceformat} ${summary.totalBasePrice.toFixed(2)}`}
+                />
+                <SummaryRow
+                  label="Discount"
+                  value={
+                    <span className="text-green-600">
+                      - {priceformat} {summary.totalDiscount.toFixed(2)}
+                    </span>
+                  }
+                />
+                <SummaryRow
+                  label="GST"
+                  value={
+                    <span className="text-blue-600">
+                      + {priceformat} {summary.totalGST.toFixed(2)}
+                    </span>
+                  }
+                />
+                <div
+                  style={{
+                    borderTop: "1px solid #e5e7eb",
+                    marginTop: 8,
+                    paddingTop: 8,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span className="font-bold text-base">Grand Total</span>
+                  <span
+                    className="font-bold text-lg"
+                    style={{ color: "var(--important)" }}
+                  >
+                    {priceformat} {summary.totalAmount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Balance indicator */}
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  background: balanceAmount > 0 ? "#fef2f2" : "#f0fdf4",
+                  border: `1px solid ${balanceAmount > 0 ? "#fecaca" : "#bbf7d0"}`,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: balanceAmount > 0 ? "#dc2626" : "#16a34a",
+                  }}
+                >
+                  {balanceAmount > 0 ? "Balance Due" : "Fully Paid ✓"}
+                </span>
+                <span
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: balanceAmount > 0 ? "#dc2626" : "#16a34a",
+                  }}
+                >
+                  {priceformat} {Math.abs(balanceAmount).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* ── RIGHT: Payment Input ── */}
+            <div>
+              <p style={{ ...labelStyle, marginBottom: 10 }}>Payment Mode</p>
+              <div className="space-y-3">
+                {PAYMENT_METHODS.map((item) => (
+                  <div
+                    key={item.name}
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    {/* Method button — click to auto-fill balance */}
+                    <button
+                      onClick={() => autoInsertAmt(item.name)}
+                      title={`Fill ${item.label} with balance`}
+                      style={{
+                        width: 72,
+                        height: 40,
+                        borderRadius: 8,
+                        background: `var(${item.colorVar})`,
+                        color: "#fff",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        border: "none",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.label}
+                    </button>
+
+                    {/* Amount input */}
+                    <Box sx={{ flex: 1 }}>
+                      <label style={labelStyle}>{item.label} Amount</label>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        type="number"
+                        name={item.name}
+                        value={payment[item.name]}
+                        onChange={handleChange}
+                        placeholder="0.00"
+                        inputProps={{ style: { textAlign: "right" } }}
+                        sx={sx}
+                      />
+                    </Box>
+                  </div>
+                ))}
+              </div>
+
+              {/* Paid total */}
+              <div
+                style={{
+                  marginTop: 14,
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 13,
+                }}
+              >
+                <span className="text-gray-500 font-medium">Amount Paid</span>
+                <span
+                  className="font-bold"
+                  style={{ color: "var(--important)" }}
+                >
+                  {priceformat} {paidAmount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Pay button ── */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 20,
+            }}
           >
-            Pay {priceformat}
-            {summary.totalAmount}
-          </button>
+            <button
+              onClick={handlePay}
+              style={{
+                padding: "11px 36px",
+                borderRadius: 8,
+                background: "var(--save-color, var(--important))",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 16,
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Confirm & Pay {priceformat}
+              {summary.totalAmount}
+            </button>
+          </div>
         </div>
       </Box>
     </Modal>
