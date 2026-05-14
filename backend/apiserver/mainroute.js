@@ -11,6 +11,7 @@ import attedanceRouter from "./controllers/attendance/memberAttedanceContr.js";
 import staffRouter from "./controllers/staff/staffController.js";
 import salerepRouter from "./controllers/reports/salereport.js";
 import attRepRouter from "./controllers/reports/attendanceReport.js";
+import dashboardRouter from "./controllers/dashboard/dashboard.js";
 
 /* =========================
    ROUTE BINDINGS
@@ -21,6 +22,7 @@ router.use("/commonvalue", commonRouter);
 router.use("/sales", salerouter);
 router.use("/attendance", attedanceRouter);
 router.use("/staff", staffRouter);
+router.use("/getdashboarddata", dashboardRouter);
 
 // reports
 router.use("/reports/salereport", salerepRouter);

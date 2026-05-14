@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Dashbg from "../assets/dashboard.png";
-
 import Clientdropdown from "../components/Clientdropdown";
 import DurationSelector from "../components/DurationSelector";
 import LoadButton from "../components/buttons/LoadButton";
-
 import DashboardCards from "../pageUIBlocks/DashboardCards";
 import DashboardCharts from "../pageUIBlocks/DashboardCharts";
-
 import "../styles/dashboard.css";
 import useStore from "../store/useStore.js";
 import api from "../services/apiService.js";
@@ -15,22 +12,44 @@ import Swal from "sweetalert2";
 
 const Dashboard = () => {
   const [cardData, setCardData] = useState([]);
-  const [chartData, setCharddata] = useState([]);
-  const token = useStore((state) => state.token);
+  const [chartData, setChartData] = useState([]);
+
+  const [filters, setFilters] = useState({
+    clientid: "",
+    startdate: "",
+    enddate: "",
+  });
+
+  const branchid = useStore((state) => state.branchid);
+
+  // prevent multiple initial loads
+  const initialLoaded = useRef(false);
 
   const loadDashboard = async () => {
     Swal.fire({
       title: "Loading Dashboard...",
       allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
+      didOpen: () => Swal.showLoading(),
     });
+
     try {
-      const response = await api.get("/getdashboarddata");
-      setCardData(response.data.cards);
-      setCharddata(response.data.charts);
+      const params = {
+        ...filters,
+      };
+
+      console.log(params);
+
+      const { data } = await api.get("/getdashboarddata", {
+        params,
+      });
+
+      // setCardData(data.cards || []);
+      // setChartData(data.charts || []);
+
+      Swal.close();
     } catch (err) {
+      Swal.close();
+
       Swal.fire({
         icon: "error",
         title: "Failed to load dashboard",
@@ -39,9 +58,18 @@ const Dashboard = () => {
     }
   };
 
+  // auto load only once after filters are ready
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    if (
+      !initialLoaded.current &&
+      filters.clientid &&
+      filters.startdate &&
+      filters.enddate
+    ) {
+      initialLoaded.current = true;
+      loadDashboard();
+    }
+  }, [filters]);
 
   return (
     <div
@@ -51,17 +79,32 @@ const Dashboard = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+
         <p className="text-sm mt-1 text-gray-300">Manage your system modules</p>
       </div>
 
       {/* Filters */}
       <section className="flex flex-col lg:flex-row gap-4 mb-6 lg:items-end">
         <Clientdropdown
-          onChangeClient={(clientId) =>
-            console.log("Selected Client ID:", clientId)
+          onChangeClient={(id) =>
+            setFilters((p) => ({
+              ...p,
+              clientid: id,
+            }))
           }
         />
-        <DurationSelector />
+
+        <DurationSelector
+          onChangeDuration={(startdate, enddate) =>
+            setFilters((p) => ({
+              ...p,
+              startdate,
+              enddate,
+            }))
+          }
+        />
+
+        {/* ONLY button click after first load */}
         <LoadButton onClick={loadDashboard} />
       </section>
 

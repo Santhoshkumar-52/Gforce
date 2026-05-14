@@ -1,11 +1,9 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { Box } from "@mui/material";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const DURATION_OPTIONS = [
+const OPTIONS = [
   { label: "Today", value: "today" },
   { label: "Yesterday", value: "ytdy" },
   { label: "Last 7 Days", value: "last7" },
@@ -14,63 +12,21 @@ const DURATION_OPTIONS = [
   { label: "Custom", value: "custom" },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const toISODate = (date) => date.toISOString().split("T")[0];
-
-const resolveDateRange = (duration) => {
-  const today = new Date();
-
-  const presets = {
-    today: () => ({ startdate: toISODate(today), enddate: toISODate(today) }),
-
-    ytdy: () => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - 1);
-      return { startdate: toISODate(d), enddate: toISODate(d) };
-    },
-
-    last7: () => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - 6);
-      return { startdate: toISODate(d), enddate: toISODate(today) };
-    },
-
-    last14: () => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - 13);
-      return { startdate: toISODate(d), enddate: toISODate(today) };
-    },
-
-    month: () => {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      return { startdate: toISODate(start), enddate: toISODate(today) };
-    },
-  };
-
-  return (
-    presets[duration]?.() ?? {
-      startdate: toISODate(today),
-      enddate: toISODate(today),
-    }
-  );
-};
-
-// ─── Shared MUI Input Styles ──────────────────────────────────────────────────
-
-const inputSx = {
+const sx = {
   "& .MuiOutlinedInput-root": {
     backgroundColor: "var(--input-bg)",
     borderRadius: "6px",
     fontSize: "14px",
     "& fieldset": { borderColor: "var(--input-border)" },
     "&:hover fieldset": { borderColor: "var(--input-border-hover)" },
-    "&.Mui-focused fieldset": { borderColor: "var(--input-border-focus)" },
+    "&.Mui-focused fieldset": {
+      borderColor: "var(--input-border-focus)",
+    },
   },
   "& .MuiSvgIcon-root": { color: "var(--input-icon)" },
   "& .MuiInputBase-input": {
     color: "var(--input-text)",
-    WebkitTextFillColor: "var(--input-text)", // overrides MUI disabled grey
+    WebkitTextFillColor: "var(--input-text)",
   },
 };
 
@@ -80,114 +36,129 @@ const labelStyle = {
   color: "var(--input-label)",
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+const format = (d) => d.toISOString().split("T")[0];
 
-const FieldLabel = ({ children }) => (
-  <label style={labelStyle}>{children}</label>
-);
+const getDates = (type) => {
+  const today = new Date();
+  const start = new Date(today);
 
-const DateField = ({ label, value, onChange, readOnly }) => (
-  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-    <FieldLabel>{label}</FieldLabel>
-    <TextField
-      type="date"
-      size="small"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={readOnly}
-      sx={{ width: 160, ...inputSx }}
-    />
-  </Box>
-);
+  switch (type) {
+    case "ytdy":
+      start.setDate(today.getDate() - 1);
+      return { startdate: format(start), enddate: format(start) };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+    case "last7":
+      start.setDate(today.getDate() - 6);
+      break;
+
+    case "last14":
+      start.setDate(today.getDate() - 13);
+      break;
+
+    case "month":
+      start.setDate(1);
+      break;
+
+    default:
+      break;
+  }
+
+  return {
+    startdate: format(start),
+    enddate: format(today),
+  };
+};
 
 const DurationSelector = ({ onChangeDuration }) => {
-  const [selected, setSelected] = useState(DURATION_OPTIONS[0]);
-  const [startdate, setStartdate] = useState(
-    () => resolveDateRange("today").startdate,
-  );
-  const [enddate, setEnddate] = useState(
-    () => resolveDateRange("today").enddate,
-  );
+  const [selected, setSelected] = useState(OPTIONS[0]);
 
-  const isCustom = selected?.value === "custom";
+  const defaultDates = getDates("today");
 
-  // Notify parent whenever dates change
-  const notify = useCallback(
-    (start, end) => {
-      onChangeDuration?.(start, end);
-    },
-    [onChangeDuration],
-  );
+  const [startdate, setStartdate] = useState(defaultDates.startdate);
+  const [enddate, setEnddate] = useState(defaultDates.enddate);
 
-  const handleDurationChange = useCallback(
-    (_, option) => {
-      if (!option) return;
-      setSelected(option);
+  const isCustom = selected.value === "custom";
 
-      if (option.value !== "custom") {
-        const { startdate: s, enddate: e } = resolveDateRange(option.value);
-        setStartdate(s);
-        setEnddate(e);
-        notify(s, e);
-      }
-      // For custom, keep existing dates and let user edit
-    },
-    [notify],
-  );
+  // send initial value
+  useEffect(() => {
+    onChangeDuration?.(startdate, enddate);
+  }, []);
 
-  const handleStartChange = useCallback(
-    (val) => {
-      setStartdate(val);
-      notify(val, enddate);
-    },
-    [enddate, notify],
-  );
+  const updateParent = (s, e) => {
+    onChangeDuration?.(s, e);
+  };
 
-  const handleEndChange = useCallback(
-    (val) => {
-      setEnddate(val);
-      notify(startdate, val);
-    },
-    [startdate, notify],
-  );
+  const handleDuration = (_, option) => {
+    setSelected(option);
+
+    if (option.value !== "custom") {
+      const { startdate, enddate } = getDates(option.value);
+
+      setStartdate(startdate);
+      setEnddate(enddate);
+
+      updateParent(startdate, enddate);
+    }
+  };
 
   return (
     <Box
-      sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 2 }}
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "flex-end",
+        gap: 2,
+      }}
     >
-      {/* Duration Dropdown */}
+      {/* Duration */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-        <FieldLabel>Select Duration</FieldLabel>
+        <label style={labelStyle}>Select Duration</label>
+
         <Autocomplete
-          options={DURATION_OPTIONS}
+          options={OPTIONS}
           value={selected}
-          getOptionLabel={(option) => option.label}
-          onChange={handleDurationChange}
-          isOptionEqualToValue={(option, value) => option.value === value.value}
           disableClearable
-          sx={{ width: 220, ...inputSx }}
+          getOptionLabel={(o) => o.label}
+          isOptionEqualToValue={(o, v) => o.value === v.value}
+          onChange={handleDuration}
+          sx={{ width: 220, ...sx }}
           renderInput={(params) => <TextField {...params} size="small" />}
         />
       </Box>
 
-      {/* From Date */}
-      <DateField
-        style={{ marginLeft: "16px" }}
-        label="From Date"
-        value={startdate}
-        onChange={handleStartChange}
-        readOnly={!isCustom}
-      />
+      {/* From */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <label style={labelStyle}>From Date</label>
 
-      {/* To Date */}
-      <DateField
-        label="To Date"
-        value={enddate}
-        onChange={handleEndChange}
-        readOnly={!isCustom}
-      />
+        <TextField
+          type="date"
+          size="small"
+          value={startdate}
+          disabled={!isCustom}
+          onChange={(e) => {
+            setStartdate(e.target.value);
+            updateParent(e.target.value, enddate);
+          }}
+          sx={{ width: 160, ...sx }}
+        />
+      </Box>
+
+      {/* To */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <label style={labelStyle}>To Date</label>
+
+        <TextField
+          type="date"
+          size="small"
+          value={enddate}
+          disabled={!isCustom}
+          onChange={(e) => {
+            setEnddate(e.target.value);
+            updateParent(startdate, e.target.value);
+          }}
+          sx={{ width: 160, ...sx }}
+        />
+      </Box>
     </Box>
   );
 };
