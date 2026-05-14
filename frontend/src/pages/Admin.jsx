@@ -1,7 +1,12 @@
 import "../styles/admin.css";
 import { useNavigate } from "react-router-dom";
 import adminBg from "../assets/admin.png";
-import { FaDumbbell, FaCog } from "react-icons/fa";
+import {
+  FaDumbbell,
+  FaMoneyBillWave,
+  FaPercentage,
+  FaTags,
+} from "react-icons/fa";
 
 const adminModules = [
   {
@@ -10,9 +15,24 @@ const adminModules = [
     path: "/admin/trainers",
   },
   {
-    name: "Settings",
-    icon: <FaCog size={26} />,
-    path: "/admin/settings",
+    name: "Plans & Pricing",
+    icon: <FaMoneyBillWave size={26} />,
+    path: "/admin/plans",
+  },
+  {
+    name: "Manage GST",
+    icon: <FaTags size={26} />,
+    path: "/admin/gst",
+  },
+  {
+    name: "Manage Discount",
+    icon: <FaPercentage size={26} />,
+    path: "/admin/discount",
+  },
+  {
+    name: "Manage Discount",
+    icon: <FaPercentage size={26} />,
+    path: "/admin/branch",
   },
 ];
 
