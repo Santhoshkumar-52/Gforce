@@ -14,6 +14,10 @@ import Trainers from "./subpages/admin/Trainer.jsx";
 import Reports from "./pages/Reports.jsx";
 import SaleReport from "./subpages/reports/SaleReport.jsx";
 import AttendanceReport from "./subpages/reports/AttendanceReport.jsx";
+import Plans from "./subpages/admin/Plans.jsx";
+import GST from "./subpages/admin/GST.jsx";
+import Discount from "./subpages/admin/Discount.jsx";
+import Branch from "./subpages/admin/Branch.jsx";
 
 const App = () => {
   return (
@@ -29,6 +33,10 @@ const App = () => {
           <Route path="/sales" element={<Sales />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/trainers" element={<Trainers />} />
+          <Route path="/admin/plans" element={<Plans />} />
+          <Route path="/admin/GST" element={<GST />} />
+          <Route path="/admin/discount" element={<Discount />} />
+          <Route path="/admin/branch" element={<Branch />} />
           <Route path="/m_attendance" element={<Memberattendance />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/sales" element={<SaleReport />} />

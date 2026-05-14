@@ -1,34 +1,52 @@
 import mongoose from "mongoose";
 
 const staffSchema = new mongoose.Schema({
-    fullName: {
-        type: String,
-        required: true
-    },
-    branchId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Branchmaster",
-        required: true
-    },
+  staffId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
 
-    mobile: String,
-    address: String,
+  fullName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
 
-    groupId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "GroupMaster",
-        required: true
-    },
+  branchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Branchmaster",
+    required: true,
+  },
 
-    activeStatus: {
-        type: Boolean,
-        default: true
-    },
+  mobile: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
 
-    createdOn: {
-        type: Date,
-        default: Date.now
-    }
+  address: {
+    type: String,
+    trim: true,
+  },
+
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "GroupMaster",
+    required: true,
+  },
+
+  activeStatus: {
+    type: Boolean,
+    default: true,
+  },
+
+  createdOn: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 export default mongoose.model("staffmaster", staffSchema, "staffmaster");
