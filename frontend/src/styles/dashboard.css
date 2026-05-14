@@ -1,20 +1,13 @@
 :root {
-  --bg-page: #f9fafb;
-  --bg-card: #ffffff;
-  --text-primary: #1f2937;
-  --text-muted: #6b7280;
-  --border-default: #e5e7eb;
-  --card-bg1: #1e40af; /* Deep Blue – trust, totals, revenue */
-  --card-bg2: #b45309; /* Warm Amber – orders, activity */
-  --card-bg3: #065f46; /* Teal Green – success, growth */
-  --card-bg4: #374151; /* Slate Gray – neutral metrics */
-  --card-bg5: #6d28d9; /* Royal Purple – premium / insights */
-  --card-text: #eeeeee;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
 
-  /* Chart js  */
+  --accent-1: #6366f1; /* sales */
+  --accent-2: #10b981; /* members */
+  --accent-3: #ef4444; /* expired */
+  --accent-4: #f59e0b; /* others */
 
-  --chart-primary: #4f46e5;
-  --chart-secondary: #22c55e;
-  --chart-accent: #f59e0b;
-  --chart-danger: #ef4444;
+  --chart-bg: #ffffff;
 }

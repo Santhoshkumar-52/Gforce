@@ -10,6 +10,7 @@ const Login = () => {
   const baseUrl = useAuthStore((state) => state.baseUrl);
   const saveuser = useAuthStore((state) => state.saveUser);
   const user = useAuthStore((state) => state.user);
+  const setoken = useAuthStore((state) => state.setToken);
 
   const [form, setForm] = useState({ username: "", password: "" });
 
@@ -38,7 +39,8 @@ const Login = () => {
           staff: { fullName },
         } = response.data.user;
         const userdetails = response.data.user;
-
+        const token = response.data.token;
+        setoken(token);
         saveuser(userdetails);
         navigate("/dashboard");
 

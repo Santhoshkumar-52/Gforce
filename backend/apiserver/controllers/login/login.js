@@ -2,6 +2,8 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import LoginMaster from "../../model/loginmaster.js";
+import { generateToken } from "../../authrouter/generateToken.js";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -52,9 +54,11 @@ loginrouter.post("/", async (req, res) => {
     console.log("Login mismatch");
     return res.status(401).json({ message: "Invalid login" });
   }
+  const token = generateToken(result[0]);
   res.status(200).json({
     message: "Login success",
     user: result[0],
+    token,
   });
 });
 

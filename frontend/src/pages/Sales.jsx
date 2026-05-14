@@ -324,7 +324,6 @@ const Sales = () => {
         <div className="mr-4 text-sm">
           <label className="mb-1">Sale Date:</label>
           <input
-            readOnly
             type="date"
             name="saledate"
             value={form.saledate}
