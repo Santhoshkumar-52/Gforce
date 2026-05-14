@@ -15,6 +15,7 @@ import dashboardRouter from "./controllers/dashboard/dashboard.js";
 import planRouter from "./controllers/plans/plancontroller.js";
 import gstRouter from "./controllers/gst/gstController.js";
 import discountRouter from "./controllers/discount/discountController.js";
+import branchSettingsRouter from "./controllers/branch/branchController.js";
 
 /* =========================
    ROUTE BINDINGS
@@ -29,6 +30,7 @@ router.use("/plans", planRouter);
 router.use("/gst", gstRouter);
 router.use("/discount", discountRouter);
 router.use("/getdashboarddata", dashboardRouter);
+router.use("/branchsettings", branchSettingsRouter);
 
 // reports
 router.use("/reports/salereport", salerepRouter);

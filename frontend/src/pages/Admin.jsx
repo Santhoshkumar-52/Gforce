@@ -2,6 +2,7 @@ import "../styles/admin.css";
 import { useNavigate } from "react-router-dom";
 import adminBg from "../assets/admin.png";
 import {
+  FaBuilding,
   FaDumbbell,
   FaMoneyBillWave,
   FaPercentage,
@@ -30,8 +31,8 @@ const adminModules = [
     path: "/admin/discount",
   },
   {
-    name: "Manage Discount",
-    icon: <FaPercentage size={26} />,
+    name: "Branch Settings",
+    icon: <FaBuilding size={26} />,
     path: "/admin/branch",
   },
 ];
