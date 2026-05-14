@@ -15,7 +15,7 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState([]);
 
   const [filters, setFilters] = useState({
-    clientid: "",
+    branchid: "",
     startdate: "",
     enddate: "",
   });
@@ -37,14 +37,11 @@ const Dashboard = () => {
         ...filters,
       };
 
-      console.log(params);
-
       const { data } = await api.get("/getdashboarddata", {
         params,
       });
 
-      // setCardData(data.cards || []);
-      // setChartData(data.charts || []);
+      setChartData(data.charts || {});
 
       Swal.close();
     } catch (err) {
@@ -62,7 +59,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (
       !initialLoaded.current &&
-      filters.clientid &&
+      filters.branchid &&
       filters.startdate &&
       filters.enddate
     ) {
@@ -89,7 +86,7 @@ const Dashboard = () => {
           onChangeClient={(id) =>
             setFilters((p) => ({
               ...p,
-              clientid: id,
+              branchid: id,
             }))
           }
         />
