@@ -2,11 +2,11 @@ import { useContext, useEffect, useState, useMemo, useCallback } from "react";
 import "../../styles/admin.css";
 import adminBg from "../../assets/admin.png";
 import CommonValueContext from "../../layouts/CommonvalueContext.jsx";
-import axios from "axios";
 import Swal from "sweetalert2";
 import ReusableTable from "../../components/ReusableTable.jsx";
 import { Modal, Box } from "@mui/material";
 import { MdEdit } from "react-icons/md";
+import api from "../../services/apiService.js";
 
 const initialForm = {
   staffId: "",
@@ -34,7 +34,7 @@ const Trainers = () => {
         didOpen: () => Swal.showLoading(),
       });
 
-      const { data } = await axios.get(`${baseUrl}/api/staff`, {
+      const { data } = await api.get("/staff", {
         params: { branchid },
       });
 
@@ -86,13 +86,104 @@ const Trainers = () => {
 
   // Save Staff
   const saveStaff = useCallback(() => {
-    console.log("Saving");
-  }, [form]);
+    if (!form.staffId || !form.fullName || !form.mobile) {
+      return Swal.fire({
+        icon: "warning",
+        text: "Please fill all required fields",
+      });
+    }
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to Save this Staff?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, save",
+      cancelButtonText: "Cancel",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const payload = {
+            ...form,
+            groupId: form.groupId || groupid?.[0]?._id, // fallback to first group if not selected
+            branchId: branchid,
+          };
+
+          const response = await api.post("/staff/add", payload);
+
+          Swal.fire({
+            icon: response.data.status,
+            text: response.data.text || "Staff added successfully",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+          });
+
+          setOpen(false);
+
+          setForm({
+            staffId: "",
+            fullName: "",
+            mobile: "",
+            groupId: "",
+            activeStatus: true,
+          });
+
+          await getTrainer();
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            text: error.response?.data?.text || "Something went wrong",
+          });
+        }
+      }
+    });
+  }, [form, getTrainer, branchid]);
 
   // Update Staff
   const updateStaff = useCallback(() => {
-    console.log("Updating");
-  }, [form]);
+    if (!form.staffId || !form.fullName || !form.mobile) {
+      return Swal.fire({
+        icon: "warning",
+        text: "Please fill all required fields",
+      });
+    }
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to Update this Staff?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, proceed",
+      cancelButtonText: "Cancel",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await api.post("/staff/update", form);
+
+          Swal.fire({
+            icon: response.data.status,
+            text: response.data.text || "Staff updated successfully",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+          });
+
+          setOpen(false);
+          getTrainer();
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            text: error.response?.data?.text || "Something went wrong",
+          });
+        }
+      }
+    });
+  }, [form, getTrainer]);
 
   // Memoized Columns (BIG performance win)
   const columns = useMemo(
