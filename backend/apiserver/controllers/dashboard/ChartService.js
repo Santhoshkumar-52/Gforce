@@ -1,4 +1,6 @@
 import salechartreport from "../charts/saleChart.js";
+import memberChart from "../charts/memberChart.js";
+import mattendanceChart from "../charts/mattendanceChart.js";
 
 const ChartService = async (filters) => {
   try {
@@ -8,10 +10,16 @@ const ChartService = async (filters) => {
       throw new Error("Missing required query parameters");
     }
 
-    const [salereport] = await Promise.all([salechartreport(filters)]);
+    const [salereport, membershipcount, mattendance] = await Promise.all([
+      salechartreport(filters),
+      memberChart(filters),
+      mattendanceChart(filters),
+    ]);
 
     return {
       salereport,
+      membershipcount,
+      mattendance,
     };
   } catch (err) {
     console.error("[ChartService Error]", err);

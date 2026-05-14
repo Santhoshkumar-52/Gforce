@@ -1,45 +1,64 @@
 import mongoose from "mongoose";
-import SaleMaster from "../../model/salemaster.js";
+import AttendanceLog from "../../model/memberattendance.js";
 
-const salechartreport = async ({ branchid, startdate, enddate }) => {
+const mattendanceChart = async ({ branchid, startdate, enddate }) => {
   const start = new Date(startdate);
 
   const end = new Date(enddate);
   end.setHours(23, 59, 59, 999);
 
-  // days difference
+  // difference in days
   const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
   // dynamic grouping
-  let groupFormat = {
-    year: { $year: "$saleDate" },
-    month: { $month: "$saleDate" },
+  let groupId = {
+    year: {
+      $year: "$checkIn",
+    },
+
+    month: {
+      $month: "$checkIn",
+    },
   };
 
   let labelType = "month";
 
+  // short range -> daily
   if (diffDays <= 14) {
-    groupFormat = {
-      year: { $year: "$saleDate" },
-      month: { $month: "$saleDate" },
-      day: { $dayOfMonth: "$saleDate" },
+    groupId = {
+      year: {
+        $year: "$checkIn",
+      },
+
+      month: {
+        $month: "$checkIn",
+      },
+
+      day: {
+        $dayOfMonth: "$checkIn",
+      },
     };
 
     labelType = "day";
-  } else if (diffDays > 730) {
-    groupFormat = {
-      year: { $year: "$saleDate" },
+  }
+
+  // large range -> yearly
+  else if (diffDays > 730) {
+    groupId = {
+      year: {
+        $year: "$checkIn",
+      },
     };
 
     labelType = "year";
   }
 
-  const result = await SaleMaster.aggregate([
+  const result = await AttendanceLog.aggregate([
     {
       $match: {
         branchId: new mongoose.Types.ObjectId(branchid),
 
-        saleDate: {
+        checkIn: {
           $gte: start,
           $lte: end,
         },
@@ -48,10 +67,10 @@ const salechartreport = async ({ branchid, startdate, enddate }) => {
 
     {
       $group: {
-        _id: groupFormat,
+        _id: groupId,
 
-        totalSales: {
-          $sum: "$nettAmount",
+        totalAttendance: {
+          $sum: 1,
         },
       },
     },
@@ -65,11 +84,14 @@ const salechartreport = async ({ branchid, startdate, enddate }) => {
     },
   ]);
 
+  // labels
   const labels = result.map((item) => {
+    // daily
     if (labelType === "day") {
       return `${item._id.day}/${item._id.month}`;
     }
 
+    // monthly
     if (labelType === "month") {
       return new Date(item._id.year, item._id.month - 1).toLocaleString(
         "default",
@@ -79,17 +101,19 @@ const salechartreport = async ({ branchid, startdate, enddate }) => {
       );
     }
 
+    // yearly
     return `${item._id.year}`;
   });
 
-  const values = result.map((item) => item.totalSales);
+  // values
+  const values = result.map((item) => item.totalAttendance);
 
   return {
     labels,
 
     datasets: [
       {
-        label: "Sales",
+        label: "Attendance",
 
         data: values,
       },
@@ -97,4 +121,4 @@ const salechartreport = async ({ branchid, startdate, enddate }) => {
   };
 };
 
-export default salechartreport;
+export default mattendanceChart;
