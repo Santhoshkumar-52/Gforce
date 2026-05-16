@@ -94,3 +94,94 @@ db.salemaster.aggregate([
     },
   },
 ]);
+
+// member attendance
+
+db.membermaster.aggregate([
+  {
+    $match: {
+      _id: ObjectId("69912ecbcb06e45c837cacf7"),
+      branchId: ObjectId("6969e6fc89c79021fb7b28f3"),
+    },
+  },
+  {
+    $lookup: {
+      from: "memberplan",
+      localField: "_id",
+      foreignField: "memberId",
+      as: "mbp",
+    },
+    $sort: {
+      _id: -1,
+    },
+  },
+]);
+
+// getting staff details with branch id
+db.staffmaster.aggregate([
+  {
+    $match: {
+      branchId: new ObjectId(branchid),
+    },
+  },
+  {
+    $lookup: {
+      from: "groupmaster",
+      localField: "groupId",
+      foreignField: "_id",
+      as: "groupDetails",
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      fullName: 1,
+      staffid: 1,
+      phone: 1,
+      activeStatus: 1,
+      mobile: 1,
+      groupName: { $arrayElemAt: ["$groupDetails.groupName", 0] },
+    },
+  },
+]);
+
+// reports
+// salereport
+await salemaster
+  .find({
+    branchId: new mongoose.Types.ObjectId(branchid),
+    saleDate: { $gte: startDate, $lte: endDate },
+  })
+  .select(
+    "billno saleDate saleType nettAmount paidAmount paymentMode status saleUniqueId",
+  )
+  .sort({ saleDate: -1 });
+
+//m_attendance
+db.m_attendanceLog.aggregate([
+  {
+    $lookup: {
+      from: "membermaster", // collection name to join
+      localField: "memberId", // field in attendance
+      foreignField: "_id", // field in members
+      as: "memberInfo", // joined result
+    },
+  },
+  {
+    $unwind: "$memberInfo", // convert array to object
+  },
+  {
+    $project: {
+      "memberInfo.firstname": 1,
+      "memberInfo.customerId": 1,
+      checkIn: 1,
+      checkOut: 1,
+      durationMinutes: 1,
+      status: 1,
+      autoEnd: 1,
+      autoEndReason: 1,
+      attendanceDate: 1,
+      source: 1,
+    },
+  },
+]);

@@ -23,7 +23,7 @@ const ProtectedLayout = () => {
         <div
           style={{
             flex: 1,
-            margin: "20px",
+            margin: "",
             overflow: "auto",
             position: "relative",
           }}

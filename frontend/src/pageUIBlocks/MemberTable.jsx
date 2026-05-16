@@ -23,10 +23,19 @@ const MemberTable = ({ onEdit }) => {
 
   const columns = [
     {
-      header: "Sno",
-      accessorKey: "id",
-      Cell: ({ row }) => row.index + 1, // Auto number,
+      accessorKey: "edit",
+      header: "Edit",
       size: 2,
+      Cell: ({ row }) => {
+        const customerid = row.original.customerId;
+
+        return (
+          <MdEdit
+            onClick={() => onEdit(customerid)}
+            className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer"
+          />
+        );
+      },
     },
     {
       accessorFn: (row) => `${row.firstname} ${row.lastname}` || "-",
@@ -46,21 +55,6 @@ const MemberTable = ({ onEdit }) => {
       accessorKey: "isactive",
       header: "Status",
       Cell: ({ row }) => (row.original.isactive ? "Active" : "Inactive"),
-    },
-    {
-      accessorKey: "edit",
-      header: "Edit",
-      size: 2,
-      Cell: ({ row }) => {
-        const customerid = row.original.customerId;
-
-        return (
-          <MdEdit
-            onClick={() => onEdit(customerid)}
-            className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer"
-          />
-        );
-      },
     },
   ];
 

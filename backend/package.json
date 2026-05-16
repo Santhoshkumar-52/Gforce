@@ -4,9 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "api": "nodemon apiserver/server.js",
-    "db": "nodemon dbserver/server.js",
-    "start": "concurrently \"npm run api\" \"npm run db\""
+    "start": "nodemon apiserver/server.js"
   },
   "keywords": [],
   "author": "",

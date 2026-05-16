@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import {
   FaHome,
-  FaTicketAlt,
+  FaUserShield,
   FaUsers,
   FaCog,
   FaSignOutAlt,
   FaBars,
   FaChartBar,
+  FaUserCheck,
 } from "react-icons/fa";
 
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { MdPointOfSale } from "react-icons/md";
 import "../styles/sidebar.css";
 import useAuthStore from "../store/useStore.js";
@@ -22,7 +23,9 @@ export default function Sidebar() {
     { name: "Sales", icon: <MdPointOfSale />, path: "/sales" },
     { name: "Members", icon: <FaUsers />, path: "/member" },
     { name: "Reports", icon: <FaChartBar />, path: "/reports" },
-    { name: "Settings", icon: <FaCog />, path: "/settings" },
+    // { name: "Settings", icon: <FaCog />, path: "/settings" },
+    { name: "Admin", icon: <FaUserShield />, path: "/admin" },
+    { name: "Attendance", icon: <FaUserCheck />, path: "/m_attendance" },
   ];
 
   const handleLogout = () => {
@@ -43,7 +46,7 @@ export default function Sidebar() {
         className="flex items-center justify-between p-4 border-b"
         style={{ borderColor: "var(--sidebar-border)" }}
       >
-        {isOpen && <span className="font-bold text-lg">Geforce</span>}
+        {isOpen && <span className="font-bold text-lg">Gforce</span>}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="p-2 hover:rounded"
@@ -58,10 +61,11 @@ export default function Sidebar() {
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
+            target={item.path == "/m_attendance" ? "_blank" : ""}
             to={item.path}
             className={({ isActive }) =>
               `flex items-center gap-3 p-3 rounded mx-2 my-1 ${
-                isActive ? "bg-[#2e2e2e]" : ""
+                isActive ? "bg-[#16a34a7e]" : ""
               }`
             }
             style={{ color: "var(--sidebar-text)" }}

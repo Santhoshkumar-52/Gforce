@@ -1,134 +1,225 @@
 import React from "react";
+import { Line, Doughnut, Bar } from "react-chartjs-2";
+
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
-  LineElement,
   PointElement,
+  LineElement,
   ArcElement,
-  Title,
+  BarElement,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
-import { Bar, Line, Doughnut } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
-  LineElement,
   PointElement,
+  LineElement,
   ArcElement,
-  Title,
+  BarElement,
   Tooltip,
   Legend,
+  Filler,
 );
 
-const DashboardCharts = () => {
-  const getVar = (name) =>
-    getComputedStyle(document.documentElement).getPropertyValue(name);
-
-  /* Plans */
-  const planData = {
-    labels: ["Monthly", "Quarterly", "Half-Yearly", "Yearly","Monthly", "Quarterly", "Half-Yearly", "Yearly"],
-    datasets: [
-      {
-        data: [120, 90, 60, 40],
-        backgroundColor: [
-          getVar("--chart-primary"),
-          getVar("--chart-secondary"),
-          getVar("--chart-accent"),
-          getVar("--chart-danger"),
-        ],
-      },
-    ],
+const DashboardCharts = ({ data }) => {
+  // charts from backend
+  const salesChart = data?.salereport || {
+    labels: [],
+    datasets: [],
   };
 
-  /* Sales Growth */
+  const membershipChart = data?.membershipcount || {
+    labels: [],
+    datasets: [],
+  };
+  const attendanceChart = data?.mattendance || {
+    labels: [],
+    datasets: [],
+  };
+
+  // sales chart styles
   const salesData = {
-    labels: ["Week1", "Week2", "Week3", "Week4"],
-    datasets: [
-      {
-        label: "Sales",
-        data: [20000, 35000, 28000, 42000],
-        borderColor: getVar("--chart-primary"),
-        backgroundColor: getVar("--chart-primary"),
-        tension: 0.4,
-      },
-    ],
+    ...salesChart,
+
+    datasets: salesChart.datasets.map((item) => ({
+      ...item,
+
+      borderColor: "#6366f1",
+
+      backgroundColor: "rgba(99,102,241,0.12)",
+
+      fill: true,
+
+      tension: 0.4,
+
+      pointRadius: 4,
+
+      borderWidth: 3,
+    })),
   };
 
-  /* Attendance */
+  // membership chart styles
+  const membershipData = {
+    ...membershipChart,
+
+    datasets: membershipChart.datasets.map((item) => ({
+      ...item,
+
+      backgroundColor: ["#22c55e", "#ef4444", "#f59e0b"],
+
+      borderWidth: 2,
+    })),
+  };
+
+  // for attendance
   const attendanceData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    datasets: [
-      {
-        label: "Attendance",
-        data: [45, 60, 52, 70, 66, 80, 40],
-        backgroundColor: getVar("--chart-secondary"),
-      },
-    ],
+    ...attendanceChart,
+
+    datasets: attendanceChart.datasets.map((item) => ({
+      ...item,
+
+      backgroundColor: "rgba(34,197,94,0.6)",
+
+      borderRadius: 6,
+
+      borderColor: "#22c55e",
+
+      borderWidth: 1,
+    })),
   };
-const rightLegendOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: "right",
-      align: "center",
-      labels: {
-        boxWidth: 14,
-        padding: 15,
+
+  // common chart options
+  const lineOptions = {
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    plugins: {
+      legend: {
+        position: "bottom",
+
+        labels: {
+          color: "#cbd5f5",
+        },
       },
     },
-  },
-};
 
-const topLegendOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: "top",
+    scales: {
+      x: {
+        ticks: {
+          color: "#cbd5f5",
+        },
+
+        grid: {
+          display: false,
+        },
+      },
+
+      y: {
+        ticks: {
+          color: "#cbd5f5",
+        },
+
+        grid: {
+          color: "rgba(255,255,255,0.05)",
+        },
+      },
     },
-  },
-};
+  };
 
-return (
-  <div className="flex flex-col space-y-6">
-    {/* Sales */}
-    <div className="bg-white rounded-2xl p-5 shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-lg">Sales Growth</h3>
+  const doughnutOptions = {
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    plugins: {
+      legend: {
+        position: "bottom",
+
+        labels: {
+          color: "#d1fae5",
+        },
+      },
+    },
+  };
+  const barOptions = {
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    plugins: {
+      legend: {
+        position: "bottom",
+
+        labels: {
+          color: "#bbf7d0",
+        },
+      },
+    },
+
+    scales: {
+      x: {
+        ticks: {
+          color: "#bbf7d0",
+        },
+
+        grid: {
+          display: false,
+        },
+      },
+
+      y: {
+        ticks: {
+          color: "#bbf7d0",
+        },
+
+        grid: {
+          color: "rgba(255,255,255,0.05)",
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+      {/* Sales Chart */}
+      <div className="p-4 rounded-xl border border-indigo-400/20 bg-indigo-500/10 backdrop-blur-md">
+        <h3 className="mb-3 text-sm font-semibold text-indigo-200">
+          Sales Trend
+        </h3>
+
+        <div className="h-[260px]">
+          <Line data={salesData} options={lineOptions} />
+        </div>
       </div>
 
-      <div className="h-72">
-        <Line data={salesData} options={topLegendOptions} />
+      {/* Membership Chart */}
+      <div className="p-4 rounded-xl border border-emerald-400/20 bg-emerald-500/10 backdrop-blur-md">
+        <h3 className="mb-3 text-sm font-semibold text-emerald-200">
+          Membership Overview
+        </h3>
+
+        <div className="h-[260px]">
+          <Doughnut data={membershipData} options={doughnutOptions} />
+        </div>
+      </div>
+      {/* Attendance Chart */}
+      <div className="p-4 rounded-xl border border-green-400/20 bg-green-500/10 backdrop-blur-md lg:col-span-2">
+        <h3 className="mb-3 text-sm font-semibold text-green-200">
+          Attendance Trend
+        </h3>
+
+        <div className="h-[260px]">
+          <Bar data={attendanceData} options={barOptions} />
+        </div>
       </div>
     </div>
-    {/* Attendance */}
-    <div className="bg-white rounded-2xl p-5 shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-lg">Daily Attendance</h3>
-      </div>
-
-      <div className="h-72">
-        <Bar data={attendanceData} options={topLegendOptions} />
-      </div>
-    </div>
-    {/* Plans */}
-    <div className="bg-white rounded-2xl p-5 shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-lg">Most Purchased Plans</h3>
-      </div>
-
-      <div className="h-72">
-        <Doughnut data={planData} options={rightLegendOptions} />
-      </div>
-    </div>
-  </div>
-);
+  );
 };
 
 export default DashboardCharts;

@@ -1,0 +1,69 @@
+:root {
+  --card-bg: rgba(216, 0, 0, 0.92);
+  --card-hover: rgba(255, 255, 255, 1);
+  --text-color: #1f2937;
+  --text-light: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(255, 255, 255, 0.2);
+
+  --primary-color: #16a34a;
+  --primary-hover: #015621;
+  --primary-text: #ffffff;
+}
+
+/* 🌄 Background */
+.bg-wrapper {
+  position: relative;
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.65),
+    rgba(0, 0, 0, 0.75)
+  );
+}
+
+.bg-wrapper > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 🧊 Glass Card */
+.glass-card {
+  /* background: var(--card-bg); */
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* 🔘 Button */
+.primary-btn {
+  background-color: var(--primary-color);
+  color: var(--primary-text);
+  transition: all 0.3s ease;
+}
+
+.primary-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+/* 🧱 Admin Grid Card */
+.admin-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  transition: all 0.25s ease;
+}
+
+.admin-card:hover {
+  background: var(--card-hover);
+  transform: translateY(-4px) scale(1.02);
+}
+

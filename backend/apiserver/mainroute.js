@@ -7,26 +7,43 @@ import loginrouter from "./controllers/login/login.js";
 import memberRouters from "./controllers/member/member.js";
 import commonRouter from "./controllers/commonvalues.js";
 import salerouter from "./controllers/sales/managesales.js";
-import dashboardRouter from "./controllers/dashboard/dashboardController.js";
-
+import attedanceRouter from "./controllers/attendance/memberAttedanceContr.js";
+import staffRouter from "./controllers/staff/staffController.js";
+import salerepRouter from "./controllers/reports/salereport.js";
+import attRepRouter from "./controllers/reports/attendanceReport.js";
+import dashboardRouter from "./controllers/dashboard/dashboard.js";
+import planRouter from "./controllers/plans/plancontroller.js";
+import gstRouter from "./controllers/gst/gstController.js";
+import discountRouter from "./controllers/discount/discountController.js";
+import branchSettingsRouter from "./controllers/branch/branchController.js";
 
 /* =========================
    ROUTE BINDINGS
 ========================= */
-router.use('/login', loginrouter)
-router.use('/member', memberRouters)
-router.use('/commonvalue', commonRouter)
-router.use('/sales', salerouter)
-router.use('/dashboard', dashboardRouter)
+router.use("/login", loginrouter);
+router.use("/member", memberRouters);
+router.use("/commonvalue", commonRouter);
+router.use("/sales", salerouter);
+router.use("/attendance", attedanceRouter);
+router.use("/staff", staffRouter);
+router.use("/plans", planRouter);
+router.use("/gst", gstRouter);
+router.use("/discount", discountRouter);
+router.use("/getdashboarddata", dashboardRouter);
+router.use("/branchsettings", branchSettingsRouter);
+
+// reports
+router.use("/reports/salereport", salerepRouter);
+router.use("/reports/attendance", attRepRouter);
 
 /* =========================
    FALLBACK (OPTIONAL)
 ========================= */
 router.use((req, res) => {
-   res.status(404).json({
-      status: "error",
-      message: "DB route not found"
-   });
+  res.status(404).json({
+    status: "error",
+    message: "DB route not found",
+  });
 });
 
 export default router;
