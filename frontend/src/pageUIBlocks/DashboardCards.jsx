@@ -4,32 +4,75 @@ const DashboardCards = ({ data }) => {
   // 🎨 Internal color system (UI responsibility)
   const cardStyles = [
     {
-      bg: "bg-indigo-500/15",
-      border: "border-indigo-400/30",
-      title: "text-indigo-200",
-      value: "text-indigo-100",
-      iconBg: "bg-indigo-500/30",
+      // 🔵 Members
+      bg: "bg-gradient-to-br from-blue-500/25 to-indigo-500/20",
+      border: "border-blue-300/30",
+      title: "text-blue-50",
+      value: "text-white",
+      iconBg: "bg-blue-500/40",
     },
+
     {
-      bg: "bg-emerald-500/15",
-      border: "border-emerald-400/30",
-      title: "text-emerald-200",
-      value: "text-emerald-100",
-      iconBg: "bg-emerald-500/30",
+      // 🟢 Active
+      bg: "bg-gradient-to-br from-emerald-500/25 to-green-500/20",
+      border: "border-emerald-300/30",
+      title: "text-emerald-50",
+      value: "text-white",
+      iconBg: "bg-emerald-500/40",
     },
+
     {
-      bg: "bg-red-500/15",
-      border: "border-red-400/30",
-      title: "text-red-200",
-      value: "text-red-100",
-      iconBg: "bg-red-500/30",
+      // 🔴 Danger
+      bg: "bg-gradient-to-br from-rose-500/25 to-red-500/20",
+      border: "border-rose-300/30",
+      title: "text-rose-50",
+      value: "text-white",
+      iconBg: "bg-rose-500/40",
     },
+
     {
-      bg: "bg-amber-500/15",
-      border: "border-amber-400/30",
-      title: "text-amber-200",
-      value: "text-amber-100",
-      iconBg: "bg-amber-500/30",
+      // 🟠 Warning
+      bg: "bg-gradient-to-br from-amber-500/25 to-orange-500/20",
+      border: "border-amber-300/30",
+      title: "text-amber-50",
+      value: "text-white",
+      iconBg: "bg-amber-500/40",
+    },
+
+    {
+      // 🟣 Purple
+      bg: "bg-gradient-to-br from-violet-500/25 to-purple-500/20",
+      border: "border-violet-300/30",
+      title: "text-violet-50",
+      value: "text-white",
+      iconBg: "bg-violet-500/40",
+    },
+
+    {
+      // 🩵 Cyan
+      bg: "bg-gradient-to-br from-cyan-500/25 to-sky-500/20",
+      border: "border-cyan-300/30",
+      title: "text-cyan-50",
+      value: "text-white",
+      iconBg: "bg-cyan-500/40",
+    },
+
+    {
+      // 🌸 Pink
+      bg: "bg-gradient-to-br from-pink-500/25 to-fuchsia-500/20",
+      border: "border-pink-300/30",
+      title: "text-pink-50",
+      value: "text-white",
+      iconBg: "bg-pink-500/40",
+    },
+
+    {
+      // ⚫ Neutral
+      bg: "bg-gradient-to-br from-slate-500/25 to-zinc-500/20",
+      border: "border-zinc-300/30",
+      title: "text-zinc-50",
+      value: "text-white",
+      iconBg: "bg-zinc-500/40",
     },
   ];
 
