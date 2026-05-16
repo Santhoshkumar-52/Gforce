@@ -42,6 +42,7 @@ const Dashboard = () => {
       });
 
       setChartData(data.charts || {});
+      setCardData(data.cards || {});
 
       Swal.close();
     } catch (err) {
@@ -79,8 +80,7 @@ const Dashboard = () => {
 
         <p className="text-sm mt-1 text-gray-300">Manage your system modules</p>
       </div>
-
-      {/* Filters */}
+      {/* Filters */}{" "}
       <section className="flex flex-col lg:flex-row gap-4 mb-6 lg:items-end">
         <Clientdropdown
           onChangeClient={(id) =>
@@ -104,12 +104,10 @@ const Dashboard = () => {
         {/* ONLY button click after first load */}
         <LoadButton onClick={loadDashboard} />
       </section>
-
       {/* Cards */}
       <section className="mb-6">
         <DashboardCards data={cardData} />
       </section>
-
       {/* Charts */}
       <section>
         <DashboardCharts data={chartData} />

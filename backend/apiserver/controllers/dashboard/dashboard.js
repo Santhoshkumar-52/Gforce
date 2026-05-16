@@ -1,23 +1,33 @@
 import express from "express";
-import axios from "axios";
-import dotenv from "dotenv";
+import CardService from "./CardService.js";
 import ChartService from "./ChartService.js";
 
-dotenv.config();
-
 const dashboardRouter = express.Router();
-dashboardRouter.get("/", async (req, res) => {
-  console.log("Fetching Chart Data with filters:", req.query);
-  try {
-    const chartresult = await ChartService(req.query);
-    res.json({
-      charts: chartresult,
-    });
 
-    console.log("Dashboard Charts Fetched !");
+dashboardRouter.get("/", async (req, res) => {
+  console.log("Fetching Dashboard Data:", req.query);
+
+  try {
+    const [chartresult, cardresult] = await Promise.allSettled([
+      ChartService(req.query),
+      CardService(req.query),
+    ]);
+
+    console.log("Dashboard Data Fetched!");
+
+    return res.status(200).json({
+      charts: chartresult.status === "fulfilled" ? chartresult.value : {},
+
+      cards: cardresult.status === "fulfilled" ? cardresult.value : [],
+    });
   } catch (err) {
-    res.status(500).json({ error: "Error processing dashboard data" });
-    console.log("Error in Fetch Dashboard Charts !");
+    console.error("Dashboard Error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error processing dashboard data",
+    });
   }
 });
+
 export default dashboardRouter;
