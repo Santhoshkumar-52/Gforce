@@ -1,5 +1,18 @@
 :root {
-  --crm-bg: #f5f6fa;
+  --primary: #4d79ff;
+  --important: #28a745;
+  --box: #f4f4f4;
+  --footertext: #FEFEFA;
+  --footerbg:#28a745;
+
+  --cash-color: #e25555;
+  --card-color: #5bc0de;
+  --upi-color: #5cb85c;
+
+  --save-color: #28a745;
+  --cancel-color: #dc3545;
+  --clear-color: #6c757d;
+    --crm-bg: #f5f6fa;
   --crm-card: #ffffff;
   --crm-text: #1f2937;
   --crm-primary: #1e3a8a;

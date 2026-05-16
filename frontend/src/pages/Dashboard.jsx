@@ -1,18 +1,29 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import Swal from "sweetalert2";
+
 import Dashbg from "../assets/dashboard.png";
+
 import Clientdropdown from "../components/Clientdropdown";
 import DurationSelector from "../components/DurationSelector";
 import LoadButton from "../components/buttons/LoadButton";
+
 import DashboardCards from "../pageUIBlocks/DashboardCards";
 import DashboardCharts from "../pageUIBlocks/DashboardCharts";
+
 import "../styles/dashboard.css";
-import useStore from "../store/useStore.js";
+
 import api from "../services/apiService.js";
-import Swal from "sweetalert2";
+import useStore from "../store/useStore.js";
 
 const Dashboard = () => {
-  const [cardData, setCardData] = useState([]);
-  const [chartData, setChartData] = useState([]);
+  const branchid = useStore((state) => state.branchid);
+
+  const initialLoaded = useRef(false);
+
+  const [dashboardData, setDashboardData] = useState({
+    cards: [],
+    charts: {},
+  });
 
   const [filters, setFilters] = useState({
     branchid: "",
@@ -20,32 +31,34 @@ const Dashboard = () => {
     enddate: "",
   });
 
-  const branchid = useStore((state) => state.branchid);
+  const updateFilters = useCallback((newValues) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...newValues,
+    }));
+  }, []);
 
-  // prevent multiple initial loads
-  const initialLoaded = useRef(false);
-
-  const loadDashboard = async () => {
-    Swal.fire({
-      title: "Loading Dashboard...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-
+  const loadDashboard = useCallback(async () => {
     try {
-      const params = {
-        ...filters,
-      };
-
-      const { data } = await api.get("/getdashboarddata", {
-        params,
+      Swal.fire({
+        title: "Loading Dashboard...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
       });
 
-      setChartData(data.charts || {});
-      setCardData(data.cards || {});
+      const { data } = await api.get("/getdashboarddata", {
+        params: filters,
+      });
+
+      setDashboardData({
+        cards: data.cards || [],
+        charts: data.charts || {},
+      });
 
       Swal.close();
     } catch (err) {
+      console.error("[Dashboard Load Error]", err);
+
       Swal.close();
 
       Swal.fire({
@@ -54,20 +67,16 @@ const Dashboard = () => {
         text: "Unexpected error occurred while fetching dashboard data.",
       });
     }
-  };
+  }, [filters]);
 
-  // auto load only once after filters are ready
   useEffect(() => {
-    if (
-      !initialLoaded.current &&
-      filters.branchid &&
-      filters.startdate &&
-      filters.enddate
-    ) {
+    const ready = filters.branchid && filters.startdate && filters.enddate;
+
+    if (!initialLoaded.current && ready) {
       initialLoaded.current = true;
       loadDashboard();
     }
-  }, [filters]);
+  }, [filters, loadDashboard]);
 
   return (
     <div
@@ -80,37 +89,37 @@ const Dashboard = () => {
 
         <p className="text-sm mt-1 text-gray-300">Manage your system modules</p>
       </div>
-      {/* Filters */}{" "}
+
+      {/* Filters */}
       <section className="flex flex-col lg:flex-row gap-4 mb-6 lg:items-end">
         <Clientdropdown
           onChangeClient={(id) =>
-            setFilters((p) => ({
-              ...p,
+            updateFilters({
               branchid: id,
-            }))
+            })
           }
         />
 
         <DurationSelector
           onChangeDuration={(startdate, enddate) =>
-            setFilters((p) => ({
-              ...p,
+            updateFilters({
               startdate,
               enddate,
-            }))
+            })
           }
         />
 
-        {/* ONLY button click after first load */}
         <LoadButton onClick={loadDashboard} />
       </section>
+
       {/* Cards */}
       <section className="mb-6">
-        <DashboardCards data={cardData} />
+        <DashboardCards data={dashboardData.cards} />
       </section>
+
       {/* Charts */}
       <section>
-        <DashboardCharts data={chartData} />
+        <DashboardCharts data={dashboardData.charts} />
       </section>
     </div>
   );
