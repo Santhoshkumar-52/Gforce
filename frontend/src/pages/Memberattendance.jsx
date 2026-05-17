@@ -7,7 +7,7 @@ import { MaterialReactTable } from "material-react-table";
 import api from "../services/apiService.js";
 
 export default function Memberattendance() {
-  const { getbranchdetails, branchdata, branchid } =
+  const { branchdata, branchid } =
     useContext(CommonValueContext);
 
   // 🔹 GROUPED STATE (clean)
@@ -22,10 +22,6 @@ export default function Memberattendance() {
 
   const currentTimeRef = useRef(null);
 
-  // 🔹 Fetch branch details
-  useEffect(() => {
-    getbranchdetails();
-  }, []);
 
   // 🔹 Live clock (fixed memory leak)
   useEffect(() => {

@@ -42,11 +42,6 @@ const Clientdropdown = ({ onChangeClient }) => {
 
   const [selected, setSelected] = useState(null);
 
-  // load branches
-  useEffect(() => {
-    setclientids();
-  }, []);
-
   // set default branch
   useEffect(() => {
     if (!branchids?.length) return;

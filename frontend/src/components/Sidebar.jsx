@@ -10,12 +10,13 @@ import {
   FaUserCheck,
 } from "react-icons/fa";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { MdPointOfSale } from "react-icons/md";
 import "../styles/sidebar.css";
 import useAuthStore from "../store/useStore.js";
 
 export default function Sidebar() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const logout = useAuthStore((state) => state.logout);
   const menuItems = [
@@ -29,6 +30,7 @@ export default function Sidebar() {
   ];
 
   const handleLogout = () => {
+    navigate("/");
     logout();
   };
 
