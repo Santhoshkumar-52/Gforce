@@ -71,7 +71,6 @@ function generateBillNo() {
 
 const Sales = () => {
   const [open, changeOpen] = useState(false);
-  const [loadingInit, setLoadingInit] = useState(true);
   const [failedSources, setFailedSources] = useState([]);
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -104,11 +103,8 @@ const Sales = () => {
 
   const {
     priceformat,
-    setdicountids,
     discountids,
     gstvalues,
-    setgstids,
-    setplanids,
     plans,
     setstaff,
     staffs,
@@ -121,32 +117,6 @@ const Sales = () => {
 
   // ── Init: load all shared dropdowns independently so one failure
   //    never blocks the rest of the page ────────────────────────────────────
-  useEffect(() => {
-    const sources = [
-      { name: "discounts", fn: setdicountids },
-      { name: "gst", fn: setgstids },
-      { name: "plans", fn: setplanids },
-      { name: "staff", fn: setstaff },
-    ];
-
-    Promise.allSettled(sources.map((s) => s.fn())).then((results) => {
-      const failed = results
-        .map((result, i) => {
-          if (result.status === "rejected") {
-            console.error(
-              `[Sales] Failed to load ${sources[i].name}:`,
-              result.reason,
-            );
-            return sources[i].name;
-          }
-          return null;
-        })
-        .filter(Boolean);
-
-      if (failed.length) setFailedSources(failed);
-      setLoadingInit(false);
-    });
-  }, []);
 
   // ── Members: separate fetch, isolated from dropdown init ─────────────────
   useEffect(() => {
@@ -433,19 +403,7 @@ const Sales = () => {
   );
 
   // ── Loading screen ────────────────────────────────────────────────────────
-  if (loadingInit) {
-    return (
-      <div
-        className="p-4 md:p-6 pb-20 bg-wrapper flex items-center justify-center min-h-screen"
-        style={{ backgroundImage: `url(${salesBg})` }}
-      >
-        <div className="text-white text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-medium">Loading sales data…</p>
-        </div>
-      </div>
-    );
-  }
+
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

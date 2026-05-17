@@ -34,14 +34,22 @@ const Login = () => {
     }
     await axios
       .post(`${baseUrl}/login`, form)
-      .then((response) => {
+      .then(async (response) => {
         const {
           staff: { fullName },
         } = response.data.user;
+
         const userdetails = response.data.user;
+
         const token = response.data.token;
+
         setoken(token);
+
         saveuser(userdetails);
+
+        // IMPORTANT
+        await useAuthStore.getState().bootstrapApp();
+
         navigate("/dashboard");
 
         Swal.fire({
