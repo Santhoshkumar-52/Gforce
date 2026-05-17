@@ -17,7 +17,7 @@ const initialForm = {
 };
 
 const Trainers = () => {
-  const { branchid, baseUrl, getGroupIds, groupid } =
+  const { branchid, getGroupIds, groupid } =
     useContext(CommonValueContext);
 
   const [trainers, setTrainers] = useState([]);
@@ -47,7 +47,7 @@ const Trainers = () => {
         text: error.response?.data?.text || "Something went wrong",
       });
     }
-  }, [baseUrl, branchid]);
+  }, [ branchid]);
 
   useEffect(() => {
     getTrainer();

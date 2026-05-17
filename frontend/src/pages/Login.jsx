@@ -7,7 +7,7 @@ import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
-  const baseUrl = useAuthStore((state) => state.baseUrl);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
   const saveuser = useAuthStore((state) => state.saveUser);
   const user = useAuthStore((state) => state.user);
   const setoken = useAuthStore((state) => state.setToken);
@@ -33,7 +33,7 @@ const Login = () => {
       return;
     }
     await axios
-      .post(`${baseUrl}/api/login`, form)
+      .post(`${baseUrl}/login`, form)
       .then((response) => {
         const {
           staff: { fullName },

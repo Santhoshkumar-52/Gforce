@@ -1,7 +1,7 @@
 import { Modal, Box, TextField } from "@mui/material";
 import { useContext, useMemo, useState } from "react";
 import CommonValueContext from "../layouts/CommonvalueContext.jsx";
-import axios from "axios";
+import api from "../services/apiService.js";
 import Swal from "sweetalert2";
 
 // Shared input style matching Sale.jsx
@@ -36,10 +36,9 @@ export default function SaleSummaryModal({
   open,
   changeOpen,
   table,
-  onSaleComplete, // ← new: called after successful save to reset parent state
+  onSaleComplete,
 }) {
-  const { priceformat, baseUrl, user, branchid } =
-    useContext(CommonValueContext);
+  const { priceformat, user, branchid } = useContext(CommonValueContext);
   const staffid = user?.staff?._id;
 
   const [payment, setPayment] = useState({ cash: 0, card: 0, upi: 0 });
@@ -72,7 +71,6 @@ export default function SaleSummaryModal({
     setPayment((prev) => ({ ...prev, [name]: Number(value) || 0 }));
   };
 
-  // Click a payment method button → fill in the full balance with that method
   const autoInsertAmt = (name) => {
     setPayment({ cash: 0, card: 0, upi: 0, [name]: balanceAmount });
   };
@@ -100,14 +98,11 @@ export default function SaleSummaryModal({
     const payload = { sales: table, summary, payment, staffid, branchid };
 
     try {
-      const res = await axios.post(`${baseUrl}/api/sales/addsale`, payload);
+      const res = await api.post("/sales/addsale", payload);
 
       if (res.data?.status === "success") {
-        // Open invoice in a new tab
         window.open(`/sales/invoice/${res.data.saleUniqueId}`, "_blank");
-        // Reset payment state locally
         setPayment({ cash: 0, card: 0, upi: 0 });
-        // Tell the parent to reset everything (table, form, billno)
         onSaleComplete?.();
       } else {
         Swal.fire({
@@ -278,7 +273,6 @@ export default function SaleSummaryModal({
                     key={item.name}
                     style={{ display: "flex", alignItems: "center", gap: 10 }}
                   >
-                    {/* Method button — click to auto-fill balance */}
                     <button
                       onClick={() => autoInsertAmt(item.name)}
                       title={`Fill ${item.label} with balance`}
@@ -298,7 +292,6 @@ export default function SaleSummaryModal({
                       {item.label}
                     </button>
 
-                    {/* Amount input */}
                     <Box sx={{ flex: 1 }}>
                       <label style={labelStyle}>{item.label} Amount</label>
                       <TextField

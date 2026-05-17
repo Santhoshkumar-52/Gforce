@@ -59,7 +59,7 @@ const MemberTable = ({ onEdit }) => {
   ];
 
   return (
-    <div className="w-100 md:w-180 xl:w-350 overflow-x-auto p-6 rounded-xl shadow-md backdrop-blur-md bg-white/10 border border-white/10">
+    <div className="w-100 md:w-180 xl:w-350 overflow-auto p-2 rounded-xl shadow-md backdrop-blur-md bg-white/10 border border-white/10">
       <MaterialReactTable
         columns={columns}
         data={data}
@@ -68,7 +68,7 @@ const MemberTable = ({ onEdit }) => {
         enablePagination
         enableColumnActions={false}
         muiTableContainerProps={{
-          sx: { width: "100%", overflowX: "auto" },
+          sx: { width: "100%", overflow: "auto",maxBlockSize: "54vh" },
         }}
         muiTableHeadProps={{
           sx: { backgroundColor: "var(--table-header-bg)" },

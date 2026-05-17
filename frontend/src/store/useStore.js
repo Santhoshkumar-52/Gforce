@@ -1,190 +1,211 @@
 import { create } from "zustand";
-import { baseUrl } from "../../defaultvalues";
 import jwtDecode from "jwt-decode";
-import axios from "axios";
+import api from "../services/apiService.js";
 
-function decodeIfExists(token) {
-  if (token) {
-    const { data } = jwtDecode(token);
-    return data;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Decode a JWT from localStorage by key.
+ * Returns the decoded .data payload, or fallback if missing/expired.
+ */
+function loadFromStorage(key, fallback = []) {
+  const token = localStorage.getItem(key);
+  if (!token) return fallback;
+  try {
+    const decoded = jwtDecode(token);
+    // Respect JWT expiry — exp is in seconds
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      localStorage.removeItem(key);
+      return fallback;
+    }
+    return decoded.data ?? fallback;
+  } catch {
+    localStorage.removeItem(key); // corrupted token
+    return fallback;
   }
-  return [];
 }
 
-let getsavedclientid = localStorage.getItem("clientid");
-let getsaveddiscountid = localStorage.getItem("discountids");
-let getsavedgstid = localStorage.getItem("gstids");
-let getsavedstaffid = localStorage.getItem("staffid");
-let getsavedplanid = localStorage.getItem("planid");
-let getloggeduserbranch = localStorage.getItem("branchid");
-let getbranchdata = localStorage.getItem("branchdetails");
-let getgroupid = localStorage.getItem("groupIds");
+/**
+ * Generic fetch-and-cache helper used by all setter actions.
+ * - Skips fetch if localStorage key already holds a valid, unexpired token.
+ * - On success: stores JWT in localStorage and updates Zustand state.
+ * - On failure: sets state to fallback silently (console.error only).
+ *
+ * @param {string}   storageKey   localStorage key
+ * @param {string}   stateKey     Zustand state key to update
+ * @param {Function} fetchFn      async () => { token, data } — returns the raw JWT token from API
+ * @param {*}        fallback     value on error (default [])
+ * @param {Function} set          Zustand set
+ */
+async function fetchAndCache({
+  storageKey,
+  stateKey,
+  fetchFn,
+  fallback = [],
+  set,
+}) {
+  // Skip if cache is still valid
+  if (loadFromStorage(storageKey, null) !== null) return;
 
+  try {
+    const token = await fetchFn();
+    localStorage.setItem(storageKey, token);
+    const data = jwtDecode(token).data;
+    set({ [stateKey]: data });
+  } catch (err) {
+    console.error(`[store] Failed to fetch ${stateKey}:`, err);
+    set({ [stateKey]: fallback });
+  }
+}
+
+// ── Initial values from localStorage ─────────────────────────────────────────
+const initialBranchids = loadFromStorage("branchids", []);
+const initialDiscounts = loadFromStorage("discountids", []);
+const initialGst = loadFromStorage("gstids", []);
+const initialStaffs = loadFromStorage("staffid", []);
+const initialPlans = loadFromStorage("planid", []);
+const initialGroups = loadFromStorage("groupIds", []);
+const initialBranchdata = loadFromStorage("branchdetails", null);
+
+// ── Store ─────────────────────────────────────────────────────────────────────
 const useStore = create((set, get) => ({
   token: localStorage.getItem("token") || null,
   user: JSON.parse(localStorage.getItem("user")) || false,
-  branchid: getloggeduserbranch || "",
-  baseUrl: baseUrl,
-  branchids: (getsavedclientid && decodeIfExists(getsavedclientid)) || [],
-  discountids: (getsaveddiscountid && decodeIfExists(getsaveddiscountid)) || [],
-  gstvalues: (getsavedgstid && decodeIfExists(getsavedgstid)) || [],
-  plans: (getsavedplanid && decodeIfExists(getsavedplanid)) || [],
-  staffs: (getsavedstaffid && decodeIfExists(getsavedstaffid)) || [],
-  groupid: (getgroupid && decodeIfExists(getgroupid)) || [],
+  branchid: localStorage.getItem("branchid") || "",
   priceformat: "₹",
-  branchdata: (getbranchdata && decodeIfExists(getbranchdata)) || null,
 
+  branchids: initialBranchids,
+  discountids: initialDiscounts,
+  gstvalues: initialGst,
+  staffs: initialStaffs,
+  plans: initialPlans,
+  groupid: initialGroups,
+  branchdata: initialBranchdata,
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
   saveUser: (userData) => {
-    (localStorage.setItem("user", JSON.stringify(userData)),
-      localStorage.setItem("branchid", userData.staff.branchId),
-      set({
-        user: userData,
-        branchid: userData.staff.branchId,
-      }));
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("branchid", userData.staff.branchId);
+    set({ user: userData, branchid: userData.staff.branchId });
   },
+
   setToken: (token) => {
     localStorage.setItem("token", token);
     set({ token });
   },
+
   logout: () => {
     localStorage.clear();
-    set({
-      user: false,
+    set({ user: false });
+  },
+
+  // ── Common value setters (all use fetchAndCache) ──────────────────────────
+  setclientids: async () => {
+    const { user } = get();
+    await fetchAndCache({
+      storageKey: "branchids",
+      stateKey: "branchids",
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/clientid", {
+          branchid: user.staff.branchId,
+          groupid: user.group._id,
+        });
+        return res.data.branchid;
+      },
+      set,
     });
   },
-  setclientids: async () => {
-    try {
-      if (get().branchids?.length > 0) return;
-      const { user } = get();
-      const response = await axios.post(`${baseUrl}/api/commonvalue/clientid`, {
-        branchid: user.staff.branchId,
-        groupid: user.group._id,
-      });
-      let clientids = response.data.branchid;
-      localStorage.setItem("branchids", clientids);
-      clientids = decodeIfExists(clientids);
-      set({
-        branchids: clientids,
-      });
-    } catch (err) {
-      console.error("Error fetching client IDs:", err);
-      set({ branchids: [] });
-    }
-  },
+
   setdicountids: async () => {
-    try {
-      if (get().discountids?.length > 0) return;
-      const { user } = get();
-      const response = await axios.post(
-        `${baseUrl}/api/commonvalue/discountid`,
-        { branchid: user.staff.branchId, groupid: user.group._id },
-      );
-      let discountids = response.data.discountcategoryid;
-      localStorage.setItem("discountids", discountids);
-      discountids = decodeIfExists(discountids);
-      set({
-        discountids: discountids,
-      });
-    } catch (err) {
-      console.error("Error fetching client IDs:", err);
-      set({ discountids: [] });
-    }
+    const { user } = get();
+    await fetchAndCache({
+      storageKey: "discountids",
+      stateKey: "discountids",
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/discountid", {
+          branchid: user.staff.branchId,
+          groupid: user.group._id,
+        });
+        return res.data.discountcategoryid;
+      },
+      set,
+    });
   },
+
   setgstids: async () => {
-    try {
-      if (get().gstvalues?.length > 0) return;
-      const { user } = get();
-      const response = await axios.post(`${baseUrl}/api/commonvalue/gstid`, {
-        branchid: user.staff.branchId,
-        groupid: user.group._id,
-      });
-      let gst = response.data.gstids;
-      localStorage.setItem("gstids", gst);
-      gst = decodeIfExists(gst);
-      set({
-        gstvalues: gst,
-      });
-    } catch (err) {
-      console.error("Error fetching client IDs:", err);
-      set({ gstvalues: [] });
-    }
+    const { user } = get();
+    await fetchAndCache({
+      storageKey: "gstids",
+      stateKey: "gstvalues",
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/gstid", {
+          branchid: user.staff.branchId,
+          groupid: user.group._id,
+        });
+        return res.data.gstids;
+      },
+      set,
+    });
   },
+
   setstaff: async () => {
-    try {
-      if (get().staffs?.length > 0) return;
-      const { user } = get();
-      const response = await axios.post(`${baseUrl}/api/commonvalue/staffid`, {
-        branchid: user.staff.branchId,
-        groupid: user.group._id,
-      });
-      let staff = response.data.staffids;
-      localStorage.setItem("staffid", staff);
-      staff = decodeIfExists(staff);
-      set({
-        staffs: staff,
-      });
-    } catch (err) {
-      console.error("Error fetching client IDs:", err);
-      set({ staffs: [] });
-    }
+    const { user } = get();
+    await fetchAndCache({
+      storageKey: "staffid",
+      stateKey: "staffs",
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/staffid", {
+          branchid: user.staff.branchId,
+          groupid: user.group._id,
+        });
+        return res.data.staffids;
+      },
+      set,
+    });
   },
+
   setplanids: async () => {
-    try {
-      if (get().plans?.length > 0) return;
-      const { user } = get();
-      const response = await axios.post(`${baseUrl}/api/commonvalue/planid`, {
-        branchid: user.staff.branchId,
-        groupid: user.group._id,
-      });
-      let plan = response.data.planids;
-      localStorage.setItem("planid", plan);
-      plan = decodeIfExists(plan);
-      set({
-        plans: plan,
-      });
-    } catch (err) {
-      console.error("Error fetching client IDs:", err);
-      set({ plans: [] });
-    }
+    const { user } = get();
+    await fetchAndCache({
+      storageKey: "planid",
+      stateKey: "plans",
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/planid", {
+          branchid: user.staff.branchId,
+          groupid: user.group._id,
+        });
+        return res.data.planids;
+      },
+      set,
+    });
   },
+
   getbranchdetails: async () => {
-    try {
-      if (get().branchdata) return;
-      const { branchid } = get();
-      const response = await axios.post(
-        `${baseUrl}/api/commonvalue/getbranchdetails`,
-        {
+    const { branchid } = get();
+    await fetchAndCache({
+      storageKey: "branchdetails",
+      stateKey: "branchdata",
+      fallback: null,
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/getbranchdetails", {
           branchid,
-        },
-      );
-      let data = response.data.branchdata;
-      localStorage.setItem("branchdetails", data);
-      data = decodeIfExists(data);
-      set({
-        branchdata: data,
-      });
-    } catch (err) {
-      console.error("Error fetching branch details:", err);
-      set({ branchdata: null });
-    }
+        });
+        return res.data.branchdata;
+      },
+      set,
+    });
   },
+
   getGroupIds: async () => {
-    try {
-      if (get().groupid?.length > 0) return;
-      const { branchid } = get();
-      const response = await axios.post(
-        `${baseUrl}/api/commonvalue/getgroupids`,
-      );
-      let data = response.data.groupIds;
-      localStorage.setItem("groupIds", data);
-      data = decodeIfExists(data);
-      set({
-        groupid: data,
-      });
-    } catch (err) {
-      console.error("Error fetching branch details:", err);
-      set({ groupid: [] });
-    }
+    await fetchAndCache({
+      storageKey: "groupIds",
+      stateKey: "groupid",
+      fetchFn: async () => {
+        const res = await api.post("/commonvalue/getgroupids");
+        return res.data.groupIds;
+      },
+      set,
+    });
   },
 }));
 
