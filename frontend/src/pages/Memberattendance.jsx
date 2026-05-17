@@ -2,12 +2,12 @@ import { useContext, useEffect, useRef, useState } from "react";
 import "../styles/mattendance.css";
 import Swal from "sweetalert2";
 import CommonValueContext from "../layouts/CommonvalueContext.jsx";
-  import { Modal, Box } from "@mui/material";
+import { Modal, Box } from "@mui/material";
 import { MaterialReactTable } from "material-react-table";
-import axios from "axios";
+import api from "../services/apiService.js";
 
 export default function Memberattendance() {
-  const { getbranchdetails, branchdata, branchid, baseUrl } =
+  const { getbranchdetails, branchdata, branchid } =
     useContext(CommonValueContext);
 
   // 🔹 GROUPED STATE (clean)
@@ -15,7 +15,7 @@ export default function Memberattendance() {
     memberId: "",
     memberData: null,
     open: false,
-    attendanceData: null, // change to object
+    attendanceData: null,
     report: null,
     summaryData: null,
   });
@@ -40,7 +40,6 @@ export default function Memberattendance() {
   }, []);
 
   // 🔹 Table data
-
   const columns = [
     { accessorKey: "date", header: "Date" },
     { accessorKey: "checkIn", header: "Check In" },
@@ -69,7 +68,7 @@ export default function Memberattendance() {
     if (!validateInput()) return;
 
     try {
-      const { data } = await axios.post(`${baseUrl}/api/attendance/checkin`, {
+      const { data } = await api.post("/attendance/checkin", {
         branchid,
         memberid: state.memberId,
       });
@@ -116,7 +115,6 @@ export default function Memberattendance() {
       }, 10000);
     } catch (err) {
       console.error("Error during check-in:", err);
-
       Swal.fire({
         icon: "error",
         title: "Check-in Failed",
@@ -130,13 +128,10 @@ export default function Memberattendance() {
     if (!validateInput()) return;
 
     try {
-      const memberdata = await axios.post(
-        `${baseUrl}/api/attendance/checkout`,
-        {
-          branchid,
-          memberid: state.memberId,
-        },
-      );
+      const memberdata = await api.post("/attendance/checkout", {
+        branchid,
+        memberid: state.memberId,
+      });
       const result = memberdata.data;
       if (result.status === "ok") {
         const minutes = result.data.durationMinutes;
@@ -158,15 +153,6 @@ export default function Memberattendance() {
       });
       return;
     }
-
-    // Swal.fire({
-    //   icon: "success",
-    //   title: "Checked Out",
-    //   html: `
-    //     <b>${state.memberData?.name || "Member"}</b><br/>
-    //     Time: ${currentTime}
-    //   `,
-    // });
 
     setState((prev) => ({ ...prev, memberId: "" }));
   };

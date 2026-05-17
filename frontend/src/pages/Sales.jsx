@@ -12,7 +12,7 @@ import {
   calculateGST,
   calculateDiscount,
 } from "../store/calculationFunctions.js";
-import axios from "axios";
+import api from "../services/apiService.js";
 import SaleSummaryModal from "../pageUIBlocks/SaleSummary.jsx";
 
 // ── Shared MUI styles ────────────────────────────────────────────────────────
@@ -71,6 +71,9 @@ function generateBillNo() {
 
 const Sales = () => {
   const [open, changeOpen] = useState(false);
+  const [loadingInit, setLoadingInit] = useState(true);
+  const [failedSources, setFailedSources] = useState([]);
+
   const user = JSON.parse(localStorage.getItem("user"));
 
   const makeDefault = useCallback(
@@ -109,7 +112,6 @@ const Sales = () => {
     plans,
     setstaff,
     staffs,
-    baseUrl,
     branchid,
   } = useStore();
 
@@ -117,26 +119,43 @@ const Sales = () => {
   const [members, setMembers] = useState([]);
   const [table, setTable] = useState([]);
 
+  // ── Init: load all shared dropdowns independently so one failure
+  //    never blocks the rest of the page ────────────────────────────────────
   useEffect(() => {
-    setdicountids();
-    setgstids();
-    setplanids();
-    setstaff();
+    const sources = [
+      { name: "discounts", fn: setdicountids },
+      { name: "gst", fn: setgstids },
+      { name: "plans", fn: setplanids },
+      { name: "staff", fn: setstaff },
+    ];
+
+    Promise.allSettled(sources.map((s) => s.fn())).then((results) => {
+      const failed = results
+        .map((result, i) => {
+          if (result.status === "rejected") {
+            console.error(
+              `[Sales] Failed to load ${sources[i].name}:`,
+              result.reason,
+            );
+            return sources[i].name;
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (failed.length) setFailedSources(failed);
+      setLoadingInit(false);
+    });
   }, []);
 
+  // ── Members: separate fetch, isolated from dropdown init ─────────────────
   useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const res = await axios.post(`${baseUrl}/api/member/getmembers`, {
-          clientid: branchid,
-        });
-        setMembers(res.data.records || []);
-      } catch (err) {
-        console.error("Failed to load members", err);
-      }
-    };
-    fetchMembers();
-  }, []);
+    if (!branchid) return;
+    api
+      .post("/member/getmembers", { clientid: branchid })
+      .then((res) => setMembers(res.data.records || []))
+      .catch((err) => console.error("[Sales] Failed to load members:", err));
+  }, [branchid]);
 
   const calculateExpiry = (startDate, duration) => {
     if (!startDate || !duration) return "";
@@ -413,6 +432,21 @@ const Sales = () => {
     document.body,
   );
 
+  // ── Loading screen ────────────────────────────────────────────────────────
+  if (loadingInit) {
+    return (
+      <div
+        className="p-4 md:p-6 pb-20 bg-wrapper flex items-center justify-center min-h-screen"
+        style={{ backgroundImage: `url(${salesBg})` }}
+      >
+        <div className="text-white text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-medium">Loading sales data…</p>
+        </div>
+      </div>
+    );
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
@@ -424,14 +458,32 @@ const Sales = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white">Sales</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-light)" }}>
-            Create and manage sales transactions{" "}
+            Create and manage sales transactions
           </p>
         </div>
         <span className="text-sm text-white font-bold rounded-xl p-4 bg-[var(--important)]">
-          Bill:{" "}
-          <strong>{form.billno}</strong>
+          Bill: <strong>{form.billno}</strong>
         </span>
       </div>
+
+      {/* Warn if some dropdowns failed — page still fully usable */}
+      {failedSources.length > 0 && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: "8px 14px",
+            borderRadius: 8,
+            background: "#fef3c7",
+            border: "1px solid #fcd34d",
+            fontSize: 13,
+            color: "#92400e",
+          }}
+        >
+          ⚠️ Could not load: <strong>{failedSources.join(", ")}</strong>. Some
+          dropdowns may be empty — please refresh if needed.
+        </div>
+      )}
+
       <hr className="mb-4" />
 
       {/* ── CARD 1: Bill Info ─────────────────────────────────────── */}
@@ -634,7 +686,7 @@ const Sales = () => {
             />
           </Box>
 
-          {/* Discount Amount — own column, never overlaps Price */}
+          {/* Discount Amount */}
           {discountoption && (
             <Box sx={{ display: "flex", flexDirection: "column" }}>
               <label style={labelStyle}>
@@ -734,10 +786,10 @@ const Sales = () => {
         </div>
       )}
 
-      {/* ── FOOTER via portal (bypasses parent transform/overflow) ── */}
+      {/* ── FOOTER via portal ── */}
       {footer}
 
-      {/* ── PAYMENT MODAL ──────────────────────────────────────── */}
+      {/* ── PAYMENT MODAL ── */}
       <SaleSummaryModal
         open={open}
         changeOpen={changeOpen}
