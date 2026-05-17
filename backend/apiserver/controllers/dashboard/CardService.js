@@ -6,6 +6,50 @@ import renewals from "../cards/newrenewals.js";
 import pendingpayments from "../cards/pendingpayments.js";
 import revenue from "../cards/revenue.js";
 import totalmembers from "../cards/totalmember.js";
+
+const cardConfigs = [
+  {
+    title: "Total Members",
+    icon: "👥",
+    service: totalmembers,
+  },
+  {
+    title: "Active Plans",
+    icon: "🏋️",
+    service: activeplans,
+  },
+  {
+    title: "Expired Plans",
+    icon: "⏰",
+    service: expiredplans,
+  },
+  {
+    title: "Expiring in 7 Days",
+    icon: "⏳",
+    service: expiringplans,
+  },
+  {
+    title: "Total Attendance",
+    icon: "📅",
+    service: attendancecount,
+  },
+  {
+    title: "Total Revenue",
+    icon: "💸",
+    service: revenue,
+  },
+  {
+    title: "Pending Payments",
+    icon: "⚠️",
+    service: pendingpayments,
+  },
+  {
+    title: "New Renewals",
+    icon: "🔄",
+    service: renewals,
+  },
+];
+
 const CardService = async (filters) => {
   try {
     const { branchid, startdate, enddate } = filters;
@@ -13,84 +57,39 @@ const CardService = async (filters) => {
     if (!branchid || !startdate || !enddate) {
       throw new Error("Missing required query parameters");
     }
-    const totalMembers = await totalmembers({ branchid, startdate, enddate });
-    const totalactiveplans = await activeplans({ branchid, startdate, enddate });
-    const totalexpiring = await expiringplans({
-      branchid,
-      startdate,
-      enddate,
-    });
-    const totalpending = await pendingpayments({
-      branchid,
-      startdate,
-      enddate,
-    });
-    const totalattendance = await attendancecount({
-      branchid,
-      startdate,
-      enddate,
-    });
-    const totalexpired = await expiredplans({
-      branchid,
-      startdate,
-      enddate,
-    });
-    const totalRevenue = await revenue({
-      branchid,
-      startdate,
-      enddate,
-    });
-    const newrenewals = await renewals({
-      branchid,
-      startdate,
-      enddate,
-    });
 
-    return [
-      {
-        title: "Total Members",
-        value: totalMembers,
-        icon: "",
-      },
-      {
-        title: "Active Plans",
-        value: totalactiveplans,
-        icon: "🏋️",
-      },
-      {
-        title: "Expired Plans",
-        value: totalexpired,
-        icon: "⏰",
-      },
-      {
-        title: "Expiring in 7 Days",
-        value: totalexpiring,
-        icon: "⏳",
-      },
-      {
-        title: "Total Attendance",
-        value: totalattendance,
-        icon: "📅",
-      },
-      {
-        title: "Total Revenue",
-        value: totalRevenue,
-        icon: "💸",
-      },
-      {
-        title: "Pending Payments",
-        value: totalpending,
-        icon: "⚠️",
-      },
-      {
-        title: "New Renewals",
-        value: newrenewals,
-        icon: "🔄",
-      },
-    ];
+    const payload = {
+      branchid,
+      startdate,
+      enddate,
+    };
+
+    const results = await Promise.all(
+      cardConfigs.map(async (card) => {
+        try {
+          const value = await card.service(payload);
+
+          return {
+            title: card.title,
+            icon: card.icon,
+            value,
+          };
+        } catch (error) {
+          console.error(`[${card.title}] Error`, error);
+
+          return {
+            title: card.title,
+            icon: card.icon,
+            value: 0,
+            error: true,
+          };
+        }
+      }),
+    );
+
+    return results;
   } catch (err) {
     console.error("[CardService Error]", err);
-
     throw err;
   }
 };

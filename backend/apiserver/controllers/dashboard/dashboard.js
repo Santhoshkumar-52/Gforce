@@ -1,25 +1,41 @@
 import express from "express";
+
 import CardService from "./CardService.js";
 import ChartService from "./ChartService.js";
 
 const dashboardRouter = express.Router();
 
+const dashboardModules = {
+  cards: CardService,
+  charts: ChartService,
+};
+
 dashboardRouter.get("/", async (req, res) => {
   console.log("Fetching Dashboard Data:", req.query);
 
   try {
-    const [chartresult, cardresult] = await Promise.allSettled([
-      ChartService(req.query),
-      CardService(req.query),
-    ]);
+    const entries = Object.entries(dashboardModules);
+
+    const results = await Promise.allSettled(
+      entries.map(([_, service]) => service(req.query)),
+    );
+
+    const response = {};
+
+    entries.forEach(([key], index) => {
+      const result = results[index];
+
+      response[key] =
+        result.status === "fulfilled"
+          ? result.value
+          : key === "cards"
+            ? []
+            : {};
+    });
 
     console.log("Dashboard Data Fetched!");
 
-    return res.status(200).json({
-      charts: chartresult.status === "fulfilled" ? chartresult.value : {},
-
-      cards: cardresult.status === "fulfilled" ? cardresult.value : [],
-    });
+    return res.status(200).json(response);
   } catch (err) {
     console.error("Dashboard Error:", err);
 

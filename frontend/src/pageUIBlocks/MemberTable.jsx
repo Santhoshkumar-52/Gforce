@@ -2,19 +2,18 @@ import { useState, useEffect } from "react";
 import { MaterialReactTable } from "material-react-table";
 import { MdEdit } from "react-icons/md";
 import useStore from "../store/useStore.js";
-import axios from "axios";
+import api from "../services/apiService.js";
 
 const MemberTable = ({ onEdit }) => {
   const [data, setData] = useState([]);
   const clientid = useStore((state) => state.branchid);
-  const baseURL = useStore((state) => state.baseUrl);
+
   useEffect(() => {
-    axios
-      .post(`${baseURL}/api/member/getmembers`, { clientid })
+    api
+      .post("/member/getmembers", { clientid })
       .then((response) => {
-        console.log(response.data.records);
-        const data = response.data.records;
-        setData(data);
+        const records = response.data.records;
+        setData(records);
       })
       .catch((error) => {
         console.error("API Error:", error);
@@ -28,12 +27,13 @@ const MemberTable = ({ onEdit }) => {
       size: 2,
       Cell: ({ row }) => {
         const customerid = row.original.customerId;
-
         return (
-          <MdEdit
+          <button
             onClick={() => onEdit(customerid)}
-            className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer"
-          />
+            className="bg-red-500 text-white px-3 py-1 rounded"
+          >
+            <MdEdit />
+          </button>
         );
       },
     },
@@ -47,7 +47,7 @@ const MemberTable = ({ onEdit }) => {
     { accessorKey: "alternate_mobile", header: "Alternate Mobile", size: 4 },
     { accessorKey: "area", header: "Area", size: 3 },
     { accessorKey: "plan_name", header: "Plan" },
-    { accessorKey: "plan_status", header: "Plan status", size: 2 },
+    { accessorKey: "plan_status", header: "Plan Status", size: 2 },
     { accessorKey: "start_date", header: "Start Date", size: 2 },
     { accessorKey: "expiry_date", header: "Expiry Date", size: 2 },
     { accessorKey: "email", header: "Email" },
@@ -59,7 +59,7 @@ const MemberTable = ({ onEdit }) => {
   ];
 
   return (
-    <div className="w-100 md:w-180 xl:w-350 overflow-x-auto">
+    <div className="w-100 md:w-180 xl:w-350 overflow-x-auto p-6 rounded-xl shadow-md backdrop-blur-md bg-white/10 border border-white/10">
       <MaterialReactTable
         columns={columns}
         data={data}
@@ -68,11 +68,7 @@ const MemberTable = ({ onEdit }) => {
         enablePagination
         enableColumnActions={false}
         muiTableContainerProps={{
-          sx: {
-            width: "100%",
-            overflowX: "auto",
-            height: "20", // allows scroll
-          },
+          sx: { width: "100%", overflowX: "auto" },
         }}
         muiTableHeadProps={{
           sx: { backgroundColor: "var(--table-header-bg)" },
