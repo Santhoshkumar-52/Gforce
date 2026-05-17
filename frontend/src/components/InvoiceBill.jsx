@@ -2,21 +2,19 @@ import React, { useContext, useEffect, useState } from "react";
 import "../styles/invoice.css";
 import { useParams } from "react-router-dom";
 import CommonValueContext from "../layouts/CommonvalueContext.jsx";
-import axios from "axios";
+import api from "../services/apiService.js";
 import Swal from "sweetalert2";
 
 export default function InvoiceBill() {
   const { saleUniqueId } = useParams();
-  const { baseUrl, branchid } = useContext(CommonValueContext);
+  const { branchid } = useContext(CommonValueContext);
 
   const [saleData, setSaleData] = useState(null);
 
   useEffect(() => {
     const fetchSaleDetails = async () => {
       try {
-        const response = await axios.get(
-          `${baseUrl}/api/sales/getsaledetail/${saleUniqueId}`,
-        );
+        const response = await api.get(`sales/getsaledetail/${saleUniqueId}`);
 
         const data = response.data[0];
 
@@ -134,9 +132,7 @@ export default function InvoiceBill() {
 
         <div className="p-6 md:p-8 space-y-1 relative">
           <img
-            src={
-              saleData.branchlogo || "../../src/assets/gforce_icon.png"
-            }
+            src={saleData.branchlogo || "../../src/assets/gforce_icon.png"}
             alt="Branch Logo"
             className="w-full h-full object-contain absolute opacity-4 top-0 bottom-0 left-0 right-0 m-auto pointer-events-none"
           />

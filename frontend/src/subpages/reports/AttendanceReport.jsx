@@ -1,6 +1,6 @@
 import { useContext, useState, useMemo, useCallback } from "react";
 import "../../styles/reports.css";
-import axios from "axios";
+import api from "../../services/apiService.js";
 import reportsBg from "../../assets/reports.png";
 import CommonValueContext from "../../layouts/CommonvalueContext.jsx";
 import ReusableTable from "../../components/ReusableTable.jsx";
@@ -10,7 +10,7 @@ import LoadButton from "../../components/buttons/LoadButton.jsx";
 import Swal from "sweetalert2";
 
 const AttendanceReport = () => {
-  const { baseUrl, user, branchid } = useContext(CommonValueContext);
+  const { user, branchid } = useContext(CommonValueContext);
 
   // State to hold selected branch and duration
   const [filters, setFilters] = useState({
@@ -39,8 +39,8 @@ const AttendanceReport = () => {
       });
     }
     try {
-      const response = await axios.get(
-        `${baseUrl}/api/reports/attendance/m_attendance`,
+      const response = await api.get(
+        `/reports/attendance/m_attendance`,
         {
           params: {
             branchid: filters.branchid,
@@ -124,8 +124,8 @@ const AttendanceReport = () => {
       const reason = result.value;
 
       try {
-        const response = await axios.put(
-          `${baseUrl}/api/reports/attendance/autoCheckout`,
+        const response = await api.put(
+          `/reports/attendance/autoCheckout`,
           {
             branchid: filters.branchid,
             startdate: filters.startdate,

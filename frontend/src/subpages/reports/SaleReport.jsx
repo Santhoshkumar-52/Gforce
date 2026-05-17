@@ -1,6 +1,6 @@
 import { useContext, useState, useMemo, useCallback } from "react";
 import "../../styles/reports.css";
-import axios from "axios";
+import api from "../../services/apiService.js";
 import reportsBg from "../../assets/reports.png";
 import CommonValueContext from "../../layouts/CommonvalueContext.jsx";
 import ReusableTable from "../../components/ReusableTable.jsx";
@@ -11,7 +11,7 @@ import Swal from "sweetalert2";
 import { FiEye } from "react-icons/fi";
 
 const SaleReport = () => {
-  const { branchid, baseUrl, getGroupIds, groupid } =
+  const { branchid, getGroupIds, groupid } =
     useContext(CommonValueContext);
 
   // State to hold selected branch and duration
@@ -41,8 +41,8 @@ const SaleReport = () => {
       });
     }
     try {
-      const response = await axios.get(
-        `${baseUrl}/api/reports/salereport/getsalereport`,
+      const response = await api.get(
+        `/reports/salereport/getsalereport`,
         {
           params: {
             branchid: filters.branchid,
